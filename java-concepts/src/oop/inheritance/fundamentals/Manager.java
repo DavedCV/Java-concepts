@@ -1,4 +1,4 @@
-package oop.inheritance.basics;
+package oop.inheritance.fundamentals;
 
 public class Manager extends Employee {
 
@@ -14,7 +14,6 @@ public class Manager extends Employee {
     }
 
     // overriding methods
-
     @Override
     public double getSalary() {
         double baseSalary = super.getSalary();

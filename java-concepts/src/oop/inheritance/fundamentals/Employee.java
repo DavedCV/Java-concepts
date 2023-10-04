@@ -1,4 +1,4 @@
-package oop.inheritance.basics;
+package oop.inheritance.fundamentals;
 
 import java.time.LocalDate;
 
