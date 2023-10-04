@@ -1,4 +1,4 @@
-package basics;
+package fundamentals;
 
 public class commandLineParameters {
     public static void main(String[] args) {

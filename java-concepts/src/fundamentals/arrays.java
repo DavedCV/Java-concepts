@@ -1,4 +1,4 @@
-package basics;
+package fundamentals;
 
 import java.util.Arrays;
 import java.util.Scanner;
@@ -37,8 +37,7 @@ public class arrays {
         int index = Arrays.binarySearch(testSort, 45);
         if (index < 0) {
             System.out.println("To maintain order number should be added at position: " + (-1 * (index + 1)));
-        }
-        else {
+        } else {
             System.out.println("Number is in position: " + index);
         }
 
@@ -46,12 +45,21 @@ public class arrays {
         boolean eq = Arrays.equals(array, testSort);
         System.out.println(eq);
 
+        // multidimensional arrays
+        int[][] magicSquare = {
+            {16, 3, 2, 13},
+            {5, 10, 11, 8},
+            {9, 6, 7, 12},
+            {4, 15, 14, 1}
+        };
+        System.out.println(Arrays.deepToString(magicSquare));
+
         // ragged arrays
         int[][] raggedArray = new int[10][];
 
         for (int i = 0; i < raggedArray.length; i++) {
-            raggedArray[i] = new int[i+1];
-            Arrays.fill(raggedArray[i], i+1);
+            raggedArray[i] = new int[i + 1];
+            Arrays.fill(raggedArray[i], i + 1);
         }
         System.out.println(Arrays.deepToString(raggedArray));
     }
