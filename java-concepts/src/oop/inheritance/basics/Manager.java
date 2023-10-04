@@ -1,7 +1,5 @@
 package oop.inheritance.basics;
 
-import oop.basics.Employee;
-
 public class Manager extends Employee {
 
     private double bonus;
