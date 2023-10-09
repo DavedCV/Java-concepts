@@ -387,3 +387,153 @@ can use to visit the elements.
   double averageWordLength = summary.getAverage();
   double maxWordLength = summary.getMax();
   ```
+  
+## Collecting into Maps
+
+Suppose you have a Stream<Person> and want to collect the elements into a map so
+that later you can look up people by their IDs. The Collectors.toMap method has
+two function arguments that produce the map’s keys and values.
+
+```java
+Map<Integer, String> idToName = people.collect(Collectors.toMap(Person::getId, Person::getName));
+```
+
+In the common case when the values should be the actual elements, use
+Function.identity() for the second function.
+
+```java
+Map<Integer, Person> idToPerson = people.collect(Collectors.toMap(Person::getId, Function.identity()));
+```
+
+If there is more than one element with the same key, there is a conflict, and the
+collector will throw an IllegalStateException. You can override that behavior by sup-
+plying a third function argument that resolves the conflict and determines the
+value for the key, given the existing and the new value. Your function could return
+the existing value, the new value, or a combination of them.
+
+```java
+Stream<Locale> locales = Stream.of(Locale.getAvailableLocales());
+Map<String, String> languageNames = locales.collect(
+    Collectors.toMap(
+        Locale::getDisplayLanguage,
+        l -> l.getDisplayLanguage(l),
+        (existingValue, newValue) -> existingValue)
+    );
+
+Map<String, Set<String>> countryLanguageSets = locales.collect(
+    Collectors.toMap(
+        Locale::getDisplayCountry,
+        l -> Collections.singleton(l.getDisplayLanguage()),
+        (a, b) ->
+        { // Union of a and b
+            Set<String> union = new HashSet<>(a);
+            union.addAll(b);
+            return union;
+        }
+    ));
+```
+
+If you want a TreeMap, supply the constructor as the fourth argument.
+
+## Grouping and Partitioning
+
+In the preceding section, you saw how to collect all languages in a given country.
+But the process was a bit tedious. You had to generate a singleton set for each
+map value and then specify how to merge the existing and new values. Forming
+groups of values with the same characteristic is very common, and the groupingBy
+method supports it directly.
+
+```java
+Map<String, List<Locale>> countryToLocales = locales.collect(
+    Collectors.groupingBy(Locale::getCountry));
+```
+
+The function Locale::getCountry is the classifier function of the grouping.
+
+When the classifier function is a predicate function (that is, a function returning
+a boolean value), the stream elements are partitioned into two lists: those where
+the function returns true and the complement. In this case, it is more efficient to use
+partitioningBy instead of groupingBy. For example, here we split all locales into those
+that use English and all others:
+
+```java
+Map<Boolean, List<Locale>> englishAndOtherLocales = locales.collect(
+    Collectors.partitioningBy(l -> l.getLanguage().equals("en")));
+List<Locale> englishLocales = englishAndOtherLocales.get(true);
+```
+
+## Downstream Collectors
+
+The groupingBy method yields a map whose values are lists. If you want to process
+those lists in some way, supply a “downstream collector.”
+
+For example, if you want sets instead of lists, you can use the 
+Collectors.toSet collector
+
+```java
+Map<String, Set<Locale>> countryToLocaleSet = locales.collect(
+    groupingBy(Locale::getCountry, toSet()));
+```
+
+Several collectors are provided for reducing grouped elements to numbers:
+
+- Collectors.counting produces a count of the collected elements.
+  
+  ```java
+  Map<String, Long> countryToLocaleCounts = 
+    locale.collect(Collectors.groupingBy(Locale::getCountry, Collectors.collect()));
+  ```
+
+- summing(Int|Long|Double) takes a function argument, applies the function to the
+  downstream elements, and produces their sum.
+
+  ```java
+  Map<String, Integer> stateCityPopulation = 
+    cities.collect(Collector.groupingBy(City::getState, summingInt(City::getPopulation)));
+  ```
+
+- maxBy and minBy take a comparator and produce maximum and minimum of the
+  downstream elements.
+
+  ```java
+  Map<String, Optional<City>> stateToLargestCity = 
+    cities.collect(Collectors.groupingBy(City::getState,
+    maxBy(Comparator.comparing(City::getPopulation))));
+  ```
+  
+- The mapping method yields a collector that applies a function to downstream results
+  and passes the function values to yet another collector.
+
+  ```java
+  Map<String, Optional<String>> stateToLongestCityName = 
+    cities.collect(Collectors.groupingBy(City::getState, 
+    Collectors.mapping(City::getName, 
+    Collectors.maxBy(Comparator.comparing(String::length)))));
+  ```
+
+  Here, we group cities by state. Within each state, we produce the names of the
+  cities and reduce by maximum length.
+
+  ```java
+  Map<String, Set<String>> countryToLanguages = 
+    locales.collect(Collectors.groupingBy(Locale::getDisplayCountry,
+    Collectors.mapping(Locale::getDisplayLanguage, Collectors.toSet())));
+  ```
+  
+- If the grouping or mapping function has return type int, long, or double, you can
+  collect elements into a summary statistics object.
+
+  ```java
+  Map<String, IntSummaryStatistics> stateToCityPopulationSummary = 
+          cities.collect(Collectors.groupingBy(City::getState,
+              Collectors.summarizingInt(City::getPopulation)));
+  ```
+  
+  Then you can get the sum, count, average, minimum, and maximum of the
+  function values from the summary statistics objects of each group.
+
+Composing collectors is a powerful approach, but it can also lead to very convoluted expressions. Their best use 
+is with groupingBy or partitioningBy to process the “downstream” map values. Otherwise, 
+simply apply methods such as map, reduce, count, max, or min directly on streams.
+
+## Reducing Operations
