@@ -537,3 +537,102 @@ is with groupingBy or partitioningBy to process the “downstream” map values.
 simply apply methods such as map, reduce, count, max, or min directly on streams.
 
 ## Reducing Operations
+
+The reduce method is a general mechanism for computing a value from a
+stream. The simplest form takes a binary function and keeps applying it, starting
+with the first two elements. For example:
+
+```java
+List<Integer> values = . . .;
+Optional<Integer> sum = values.stream().reduce((x, y) -> x + y);
+```
+
+The method returns an Optional because there is no valid result
+if the stream is empty.
+
+The operation should be associative: It shouldn’t matter in which order you combine
+the elements. In math notation, **(x op y) op z** must be equal to **x op (y op z)**. This
+allows efficient reduction with parallel streams.
+
+Often, there is an identity value e such that **e op x = x**, and you can use that element
+as the start of the computation. For example, 0 is the identity value for addition.
+
+In the presence of the identity value, you can write the method as:
+
+```java
+List<Integer> values = . . .;
+Integer sum = values.stream().reduce(0, (x, y) -> x + y)
+```
+
+In this case the identity value is returned if the stream is empty, and you no longer need to
+deal with the Optional class.
+
+Now suppose you have a stream of objects and want to form the sum of some
+property, such as all lengths in a stream of strings. You can’t use the simple form
+of reduce. It requires a function (T, T) -> T, with the same types for the arguments
+and the result. But in this situation, you have two types: The stream elements have
+type String, and the accumulated result is an integer. There is a form of reduce that
+can deal with this situation.
+
+First, you supply an “accumulator” function (total, word) -> total + word.length(). That
+function is called repeatedly, forming the cumulative total. But when the computation is parallelized, there will be multiple computations of this kind, and you
+need to combine their results. You supply a second function for that purpose.
+The complete call is
+
+```java
+int result = 
+        words.reduce(0, (total, word) -> total + word.length
+        (total1, total2) -> total1 + total2);
+```
+
+## Primitive Type Streams
+
+So far, we have collected integers in a Stream<Integer>, even though it is clearly ineffi-
+cient to wrap each integer into a wrapper object. The same is true for the other
+primitive types: double, float, long, short, char, byte, and boolean.
+
+The stream library has
+specialized types IntStream, LongStream, and DoubleStream that store primitive values di-
+rectly, without using wrappers. If you want to store short, char, byte, and boolean,
+use an IntStream, and for float, use a DoubleStream.
+
+- To create an IntStream, call the IntStream.of and Arrays.stream methods:
+
+  ```java
+  IntStream stream = IntStream.of(1, 1, 2, 3, 5);
+  stream = Arrays.stream(values, from, to); // values is an int[] array
+  ```
+
+- As with object streams, you can also use the static generate and iterate methods. In
+addition, IntStream and LongStream have static methods range and rangeClosed that generate
+integer ranges with step size one:
+
+  ```java
+  IntStream zeroToNinetyNine = IntStream.range(0, 100); // Upper bound is excluded
+  IntStream zeroToHundred = IntStream.rangeClosed(0, 100); // Upper bound is included
+  ```
+
+- When you have a stream of objects, you can transform it to a primitive type stream
+with the mapToInt, mapToLong, or mapToDouble methods. For example, if you have a
+stream of strings and want to process their lengths as integers, you might as well
+do it in an IntStream:
+
+  ```java
+  Stream<String> words = . . .;
+  IntStream lengths = words.mapToInt(String::length);
+  ```
+
+- To convert a primitive type stream to an object stream, use the boxed method:
+
+  ```java
+  Stream<Integer> integers = IntStream.range(0, 100).boxed();
+  ```
+- The toArray methods return primitive type arrays.
+- Methods that yield an optional result return an OptionalInt, OptionalLong, or
+  OptionalDouble. These classes are analogous to the Optional class but have methods
+  getAsInt, getAsLong, and getAsDouble instead of the get method.
+- There are methods sum, average, max, and min that return the sum, average,
+  maximum, and minimum. These methods are not defined for object streams.
+- The summaryStatistics method yields an object of type IntSummaryStatistics,
+  LongSummaryStatistics, or DoubleSummaryStatistics that can simultaneously report the
+  sum, average, maximum, and minimum of the stream.
