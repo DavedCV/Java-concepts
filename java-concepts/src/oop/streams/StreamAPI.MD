@@ -205,7 +205,7 @@ They reduce the stream to a non-stream value that can be used in your program.
 these methods return an Optional<T> value that either wraps the
 answer or indicates that there is none (because the stream happened to be empty).
 In the olden days, it was common to return null in such a situation. But that can
-lead to null pointer exceptions when it happens in an incompletely tested program.
+lead to null pointer errorHandling when it happens in an incompletely tested program.
 The Optional type is a better way of indicating a missing return value.
 
 - Get the maximum of a string:

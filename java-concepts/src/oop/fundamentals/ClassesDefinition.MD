@@ -88,7 +88,7 @@ String s = birthday.toString(); // NullPointerException
 
 This is a serious error, similar to an “index out of bounds” exception. If your
 program does not “catch” an exception, it is terminated. Normally, programs
-don’t catch these kinds of exceptions but rely on programmers not to cause
+don’t catch these kinds of errorHandling but rely on programmers not to cause
 them in the first place.
 
 When you define a class, it is a good idea to be clear about which fields can
