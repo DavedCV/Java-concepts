@@ -1,6 +1,5 @@
-package oop.inheritance.interfaces;
+package oop.interfaces;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 

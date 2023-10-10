@@ -1,4 +1,4 @@
-package oop.inheritance.innerClasses;
+package oop.innerClasses;
 
 import javax.swing.*;
 import java.awt.*;

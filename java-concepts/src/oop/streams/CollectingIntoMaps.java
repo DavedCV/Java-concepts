@@ -1,4 +1,4 @@
-package oop.inheritance.streams;
+package oop.streams;
 
 import java.util.*;
 import java.util.function.Function;

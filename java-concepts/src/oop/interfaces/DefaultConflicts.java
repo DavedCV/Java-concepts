@@ -1,4 +1,4 @@
-package oop.inheritance.interfaces;
+package oop.interfaces;
 
 interface Person {
     default String getName() {

@@ -1,4 +1,4 @@
-package oop.inheritance.lambdas;
+package oop.lambdas;
 
 import javax.swing.*;
 import java.awt.*;

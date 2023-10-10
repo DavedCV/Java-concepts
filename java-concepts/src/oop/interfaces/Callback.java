@@ -1,4 +1,4 @@
-package oop.inheritance.interfaces;
+package oop.interfaces;
 
 import javax.swing.*;
 import java.awt.*;

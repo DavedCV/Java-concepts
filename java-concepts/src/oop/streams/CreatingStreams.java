@@ -1,7 +1,6 @@
-package oop.inheritance.streams;
+package oop.streams;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

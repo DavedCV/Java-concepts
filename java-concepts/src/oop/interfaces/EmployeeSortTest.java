@@ -1,4 +1,4 @@
-package oop.inheritance.interfaces;
+package oop.interfaces;
 
 import java.util.Arrays;
 
