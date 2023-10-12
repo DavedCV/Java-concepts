@@ -509,3 +509,154 @@ ArrayList<T> implements the interface List<T>. That means an ArrayList<Manager> 
 be converted to a List<Manager>.
 
 ## Wildcard Types
+
+### The Wildcard Concept
+
+In a wildcard type, a type parameter is allowed to vary. For example, the
+wildcard type
+
+```java
+Pair<? extends Employee>
+```
+
+denotes any generic Pair type whose type parameter is a subclass of Employee,
+such as Pair<Manager>, but not Pair<String>.
+
+Let’s say you want to write a method that prints out pairs of employees,
+like this:
+
+```java
+public static void printBuddies(Pair<Employee> p) {
+    Employee first = p.getFirst();
+    Employee second = p.getSecond();
+    System.out.println(first.getName() + " and " + second.getName() + " are buddies.");
+}
+```
+
+In this case, you cannot pass a Pair<Manager> to
+that method, which is rather limiting. But the solution is simple—use a
+wildcard type:
+
+```java
+public static void printBuddies(Pair<? extends Employee> p)
+```
+
+The type Pair<Manager> is a subtype of Pair<? extends Employee>
+
+It is not possible to corrupt via generic wildcard references:
+
+```java
+var managerBuddies = new Pair<Manager>(ceo, cfo);
+Pair<? extends Employee> wildcardBuddies = managerBuddies; // OK
+wildcardBuddies.setFirst(lowlyEmployee); // compile-time error
+```
+
+No corruption is possible. The call to setFirst is a type error. To see why, let
+us have a closer look at the type Pair<? extends Employee>. Its methods look
+like this:
+
+```java
+? extends Employee getFirst()
+void setFirst(? extends Employee)
+```
+
+This makes it impossible to call the setFirst method. The compiler only knows
+that it needs some subtype of Employee, but it doesn’t know which type. It refuses
+to pass any specific type—after all, ? might not match it.
+
+We don’t have this problem with getFirst: It is perfectly legal to assign the
+return value of getFirst to an Employee reference.
+
+This is the key idea behind bounded wildcards. We now have a way of dis-
+tinguishing between the safe accessor methods and the unsafe mutator
+methods.
+
+### Supertype Bounds for Wildcards
+
+Wildcard bounds are similar to type variable bounds, but they have an added
+capability—you can specify a supertype bound, like this:
+
+```java
+? super Manager
+```
+
+This wildcard is restricted to all supertypes of Manager.
+
+A wildcard with a supertype bound gives
+you a behavior that is opposite to what we've seen. You can supply 
+parameters to methods, but you can’t use the return values. For example, 
+Pair<? super Manager> has methods that can be described as follows:
+
+```java
+void setFirst(? super Manager)
+? super Manager getFirst()
+```
+
+This is not actual Java syntax, but it shows what the compiler knows. The
+compiler cannot know the exact type of the setFirst method and therefore
+cannot accept a call with an argument of type Employee or Object. It is only pos-
+sible to pass an object of type Manager or a subtype such as Executive. Moreover,
+if you call getFirst, there is no guarantee about the type of the returned object.
+You can only assign it to an Object.
+
+Intuitively speaking, wildcards with supertype bounds let you write to
+a generic object, while wildcards with subtype bounds let you read from a
+generic object.
+
+Here is an use for supertype bounds. The Comparable interface is itself a
+generic type. It is declared as follows:
+
+```java
+public interface Comparable<T> {
+    public int compareTo(T other);
+}
+```
+
+Here, the type variable indicates the type of the other parameter. For ex-
+ample, the String class implements Comparable<String>, and its compareTo method is
+declared as
+
+```java
+public int compareTo(String other)
+```
+
+Now that Comparable is a generic type, perhaps we should have done a better
+job with the minmax method of the ArrayAlg class? We could have declared it as
+
+```java
+public static <T extends Comparable<T>> Pair<T> minmax(T[] a)
+```
+
+This looks more thorough than just using T extends Comparable, and it would work
+fine for many classes. For example, if you compute the minimum of a String
+array, then T is the type String, and String is a subtype of Comparable<String>. But
+we run into a problem when processing an array of LocalDate objects. As it
+happens, LocalDate implements ChronoLocalDate, and ChronoLocalDate extends
+Comparable<ChronoLocalDate>. Thus, LocalDate implements Comparable<ChronoLocalDate> but
+not Comparable<LocalDate>.
+
+In a situation such as this one, supertypes come to the rescue:
+
+```java
+public static <T extends Comparable<? super T>> Pair<T> minmax(T[] a)
+```
+
+Maybe it is declared to take an object of type T, or—for example, when T is
+LocalDate—a supertype of T. At any rate, it is safe to pass an object of type T to
+the compareTo method.
+
+### Unbounded Wilcards
+
+You can even use wildcards with no bounds at all—for example, Pair<?>. At
+first glance, this looks identical to the raw Pair type. Actually, the types are
+very different. The type Pair<?> has methods such as
+
+```java
+? getFirst()
+void setFirst(?)
+```
+
+The return value of getFirst can only be assigned to an Object. The setFirst
+method can never be called, not even with an Object. That’s the essential differ-
+ence between Pair<?> and Pair: you can call the setFirst method of the raw Pair
+class with any Object.
