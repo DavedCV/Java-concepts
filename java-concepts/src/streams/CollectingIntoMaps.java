@@ -1,4 +1,4 @@
-package oop.streams;
+package streams;
 
 import java.util.*;
 import java.util.function.Function;

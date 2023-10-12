@@ -1,4 +1,4 @@
-package oop.lambdas;
+package lambdas;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

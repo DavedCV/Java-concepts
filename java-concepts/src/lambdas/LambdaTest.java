@@ -1,4 +1,4 @@
-package oop.lambdas;
+package lambdas;
 
 import java.util.Arrays;
 
