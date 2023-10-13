@@ -504,3 +504,436 @@ element.)
 
 ## Maps
 
+A map stores key/value pairs. You can find a value if
+you provide the key. For example, you may store a table of employee records,
+where the keys are the employee IDs and the values are Employee objects.
+
+### Basic Maps Operations
+
+The Java library supplies two general-purpose implementations for maps:
+HashMap and TreeMap. Both classes implement the Map interface. A hash map hashes the keys, and a tree map uses an ordering on the keys
+to organize them in a search tree. The hash or comparison function is applied
+only to the keys. The values associated with the keys are not hashed or
+compared.
+
+```java
+var staff = new HashMap<String, Employee>(); // HashMap implements Map
+var harry = new Employee("Harry Hacker");
+staff.put("987-98-9996", harry);
+. . .
+```
+
+To retrieve an object, you must use (and, therefore, remember) the key.
+
+If no information is stored in the map with the particular key specified, get
+returns null. The null return value can be inconvenient. Sometimes, you have a good default
+that can be used for keys that are not present in the map. Then use the
+getOrDefault method.
+
+```java
+Map<String, Integer> scores = . . .;
+int score = scores.getOrDefault(id, 0); // gets 0 if the id is not present
+```
+
+Keys must be unique. You cannot store two values with the same key. If you
+call the put method twice with the same key, the second value replaces the
+first one. In fact, put returns the previous value associated with its key
+parameter.
+
+The easiest way of iterating over the keys and values of a map is the forEach
+method. Provide a lambda expression that receives a key and a value. That
+expression is invoked for each map entry in turn.
+
+```java
+scores.forEach((k, v) ->
+    System.out.println("key=" + k + ", value=" + v));
+```
+
+### Updating Map Entries
+
+A tricky part of dealing with maps is updating an entry. Normally, you get
+the old value associated with a key, update it, and put back the updated value.
+But you have to worry about the special case of the first occurrence of a key.
+
+```java
+counts.put(word, counts.get(word) + 1);
+```
+
+That works, except in the case when word is encountered for the first time.
+Then get returns null, and a NullPointerException occurs. Simply use getOrDefault:
+
+```java
+counts.put(word, counts.getOrDefault(word, 0) + 1);
+```
+
+But you can do better than that. The merge method simplifies this common
+operation. The call
+
+```java
+counts.merge(word, 1, Integer::sum);
+```
+
+associates word with 1 if the key wasn’t previously present, and otherwise
+combines the previous value and 1, using the Integer::sum function.
+
+
+### Map Views
+
+The collections framework does not consider a map itself as a collection.
+(Other frameworks for data structures consider a map as a collection of
+key/value pairs, or as a collection of values indexed by the keys.) However,
+you can obtain views of the map—objects that implement the Collection interface
+or one of its subinterfaces.
+
+There are three views: the set of keys, the collection of values (which is not
+a set), and the set of key/value pairs. The keys and key/value pairs form a
+set because there can be only one copy of a key in a map. The methods
+
+```java
+Set<K> keySet()
+Collection<V> values()
+Set<Map.Entry<K, V>> entrySet()
+```
+
+return these three views. (The elements of the entry set are objects of a class
+implementing the Map.Entry interface.)
+
+If you want to look at both keys and values, you can avoid value lookups by
+enumerating the entries. Use the following code skeleton:
+
+```java
+for (Map.Entry<String, Employee> entry : staff.entrySet()) {
+    String k = entry.getKey();
+    Employee v = entry.getValue();
+    do something with k, v
+}
+```
+
+If you invoke the remove method of the iterator on the key set view, you actu-
+ally remove the key and its associated value from the map. However, you cannot
+add an element to the key set view. It makes no sense to add a key without
+also adding a value. If you try to invoke the add method, it throws an
+UnsupportedOperationException. The entry set view has the same restriction, even
+though it would make conceptual sense to add a new key/value pair.
+
+
+### Weak Hash Maps
+
+The WeakHashMap class was designed to solve an interesting problem. What hap-
+pens with a value whose key is no longer used anywhere in your program?
+Suppose the last reference to a key has gone away. Then, there is no longer
+any way to refer to the value object. But, as no part of the program has the
+key any more, the key/value pair cannot be removed from the map. Why
+can’t the garbage collector remove it? Isn’t it the job of the garbage collector
+to remove unused objects?
+
+This data structure cooperates with the garbage collector to remove 
+key/value pairs when the only reference to the key is the one from the 
+hash table entry.
+
+
+### Linked Hash Sets and Maps
+
+The LinkedHashSet and LinkedHashMap classes remember in which order you inserted
+items. That way, you can avoid the seemingly random order of items in a
+hash table. As entries are inserted into the table, they are joined in a doubly
+linked list
+
+![](LinkedHastTable.png)
+
+
+A linked hash map can alternatively use access order, not insertion order, to
+iterate through the map entries. Every time you call get or put, the affected
+entry is removed from its current position and placed at the end of the linked
+list of entries. (Only the position in the linked list of entries is affected, not
+the hash table bucket. An entry always stays in the bucket that corresponds
+to the hash code of the key). Access order is useful for implementing a “least recently used” discipline for
+a cache.
+
+### Identity Hash Maps
+
+The IdentityHashMap has a quite specialized purpose. Here, the hash values
+for the keys should not be computed by the hashCode method but by the
+System.identityHashCode method. That’s the method that Object.hashCode uses to
+compute a hash code from the object’s memory address. Also, for comparison
+of objects, the IdentityHashMap uses ==, not equals.
+
+In other words, different key objects are considered distinct even if they have
+equal contents. This class is useful for implementing object traversal algorithms, 
+such as object serialization, in which you want to keep track of which
+objects have already been traversed.
+
+## Views and Wrappers
+
+You might think it is overkill to have lots
+of interfaces and abstract classes to implement a modest number of concrete
+collection classes. However, these figures don’t tell the whole story. By using
+views, you can obtain other objects that implement the Collection or Map inter-
+faces. You saw one example of this with the keySet method of the map classes.
+At first glance, it appears as if the method creates a new set, fills it with all the
+keys of the map, and returns it. However, that is not the case. Instead,
+the keySet method returns an object of a class that implements the Set interface
+and whose methods manipulate the original map. Such a collection is called
+a view.
+
+### Small Collections
+
+Java 9 introduces static methods yielding a set or list with given elements,
+and a map with given key/value pairs.
+
+```java
+List<String> names = List.of("Peter", "Paul", "Mary");
+Set<Integer> numbers = Set.of(2, 3, 5);
+```
+
+yield a list and a set with three elements. For a map, you specify the keys
+and values, like this:
+
+```java
+Map<String, Integer> scores = Map.of("Peter", 2, "Paul", 3, "Mary", 5);
+```
+
+The elements, keys, or values may not be null.
+
+The List and Set interfaces have eleven of methods with zero to ten arguments,
+and an of method with a variable number of arguments. The specializations
+are provided for efficiency.
+
+For the Map interface, it is not possible to provide a version with variable argu-
+ments since the argument types alternate between the key and value types.
+There is a static method ofEntries that accepts an arbitrary number of
+Map.Entry<K, V> objects, which you can create with the static entry method.
+
+```java
+import static java.util.Map.*;
+. . .
+Map<String, Integer> scores = ofEntries(
+    entry("Peter", 2),
+    entry("Paul", 3),
+    entry("Mary", 5)
+);
+```
+
+The of and ofEntries methods produce objects of classes that have an instance
+variable for each element, or that are backed by an array.
+
+These collection objects are unmodifiable. Any attempt to change their contents
+results in an UnsupportedOperationException.
+
+### Subranges
+
+You can form subrange views for a number of collections. For example, sup-
+pose you have a list staff and want to extract elements 10 to 19. Use the subList
+method to obtain a view into the subrange of the list:
+
+```java
+List<Employee> group2 = staff.subList(10, 20);
+```
+
+The first index is inclusive, the second exclusive.
+
+You can apply any operations to the subrange, and they automatically reflect
+the entire list.
+
+For sorted sets and maps, you use the sort order, not the element position,
+to form subranges. The SortedSet interface declares three methods:
+
+```java
+SortedSet<E> subSet(E from, E to)
+SortedSet<E> headSet(E to)
+SortedSet<E> tailSet(E from)
+```
+
+For sorted maps, the similar methods
+
+```java
+SortedMap<K, V> subMap(K from, K to)
+SortedMap<K, V> headMap(K to)
+SortedMap<K, V> tailMap(K from) 
+```
+
+return views into the maps consisting of all entries in which the keys fall into
+the specified ranges.
+
+The NavigableSet interface introduced in Java 6 gives more control over these
+subrange operations. You can specify whether the bounds are included:
+
+```java
+NavigableSet<E> subSet(E from, boolean fromInclusive, E to, boolean toInclusive)
+NavigableSet<E> headSet(E to, boolean toInclusive)
+NavigableSet<E> tailSet(E from, boolean fromInclusive)
+```
+
+### Unmodifiable Views
+
+The Collections class has methods that produce unmodifiable views of collections.
+These views add a runtime check to an existing collection. If an attempt to
+modify the collection is detected, an exception is thrown and the collection
+remains untouched.
+
+You obtain unmodifiable views by eight methods:
+
+```java
+Collections.unmodifiableCollection
+Collections.unmodifiableList
+Collections.unmodifiableSet
+Collections.unmodifiableSortedSet
+Collections.unmodifiableNavigableSet
+Collections.unmodifiableMap
+Collections.unmodifiableSortedMap
+Collections.unmodifiableNavigableMap
+```
+
+Each method is defined to work on an interface. For example, Collections
+.unmodifiableList works with an ArrayList, a LinkedList, or any other class that
+implements the List interface.
+
+The views wrap the interface and not the actual collection object, so you only
+have access to those methods that are defined in the interface. For example,
+the LinkedList class has convenience methods, addFirst and addLast, that are not
+part of the List interface. These methods are not accessible through the
+unmodifiable view.
+
+### Checked Views
+
+Checked views are intended as debugging support for a problem that can
+occur with generic types. It is actually possible to
+smuggle elements of the wrong type into a generic collection. A checked view can 
+detect this problem.
+
+## Algorithms
+
+In addition to implementing collection classes, the Java collections framework
+also provides a number of useful algorithms.
+
+### Sorting ang Shuffling
+
+- The sort method in the Collections class sorts a collection that implements the
+List interface.
+
+```java
+var staff = new LinkedList<String>();
+fill collection
+Collections.sort(staff);
+```
+
+This method assumes that the list elements implement the Comparable interface.
+If you want to sort the list in some other way, you can use the sort method
+of the List interface and pass a Comparator object. Here is how you can sort a
+list of employees by salary:
+
+```java
+staff.sort(Comparator.comparingDouble(Employee::getSalary));
+```
+
+If you want to sort a list in descending order, use the static convenience method
+Comparator.reverseOrder(). It returns a comparator that returns b.compareTo(a).
+
+```java
+staff.sort(Comparator.reverseOrder())
+
+staff.sort(Comparator.comparingDouble(Employee::getSalary).reversed())
+```
+
+The sort algorithm used in the collections library is a bit slower than Quick-
+Sort, the traditional choice for a general-purpose sorting algorithm. However,
+it has one major advantage: It is stable, that is, it doesn’t switch equal elements.
+
+Why do you care about the order of equal elements? Here is a common scenario. 
+Suppose you have an employee list that you already sorted by name.
+Now you sort by salary. What happens to employees with equal salary? With
+a stable sort, the ordering by name is preserved. In other words, the outcome
+is a list that is sorted first by salary, then by name.
+
+- The Collections class has an algorithm shuffle that does the opposite of sorting—it
+  randomly permutes the order of the elements in a list. For example:
+
+```java
+ArrayList<Card> cards = . . .;
+Collections.shuffle(cards);
+```
+
+### Binary Search
+
+The binarySearch of the Collections class implements this algorithm. Note that the
+collection must already be sorted, or the algorithm will return the wrong answer.
+
+If the collection is not sorted by the compareTo element of the Comparable interface,
+supply a comparator object as well.
+
+```java
+i = Collections.binarySearch(c, element);
+i = Collections.binarySearch(c, element, comparator);
+```
+
+A non-negative return value from the binarySearch method denotes the index
+of the matching object.
+
+If the value is negative, then there is no matching element. However,
+you can use the return value to compute the location where you should insert
+element into the collection to keep it sorted. The insertion location is
+
+```java
+insertionPoint = -i - 1;
+```
+
+To be worthwhile, binary search requires random access. If you have to iterate
+one by one through half of a linked list to find the middle element, you have
+lost all advantage of the binary search. Therefore, the binarySearch algorithm
+reverts to a linear search if you give it a linked list.
+
+### Simple algorithms
+
+The Collections class contains several simple but useful algorithms. Among
+them is finding the maximum value of a collection. Others include copying 
+elements from one list to another, filling a container with a constant 
+value, and reversing a list.
+
+We like the
+algorithms because they make life easier for the programmer reading the code.
+
+The default methods Collection.removeIf and List.replaceAll that are just a bit more
+complex. You provide a lambda expression to test or transform elements.
+
+### Bulk Operations
+
+There are several operations that copy or remove elements “in bulk.” The call
+
+```java
+coll1.removeAll(coll2);
+```
+
+removes all elements from coll1 that are present in coll2. Conversely,
+
+```java
+coll1.retainAll(coll2);
+```
+
+removes all elements from coll1 that are not present in coll2.
+
+You can carry this idea further and apply a bulk operation to a view. By using a subrange view, you can 
+restrict bulk operations to sublists and
+subsets.
+
+### Comverting between Collections and Arrays
+
+If you have an array that you need to turn into a collection, the List.of wrapper
+serves this purpose. For example:
+
+```java
+String[] values = . . .;
+var staff = new HashSet<>(List.of(values));
+```
+
+Obtaining an array from a collection is a bit trickier. Of course, you can use
+the toArray method. 
+
+The array returned by the toArray method was created as an Object[] array, and
+you cannot change its type. Instead, use a variant of the toArray method
+and give it an array of length 0 of the type that you’d like. The returned array
+is then created as the same array type:
+
+```java
+Object[] values = staff.toArray();
+String[] values = staff.toArray(new String[0]);
+```
