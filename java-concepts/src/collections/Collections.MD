@@ -476,3 +476,31 @@ interface adds several convenient methods for locating elements and for
 backward traversal.
 
 ### Queues and Deques
+
+A queue lets you efficiently add elements at the tail
+and remove elements from the head. A double-ended queue, or deque, lets
+you efficiently add or remove elements at the head and tail.
+
+Adding elements
+in the middle is not supported. Java 6 introduced a Deque interface. It is 
+implemented by the ArrayDeque and LinkedList classes, both of which provide 
+deques whose size grows as needed.
+
+### Priority Queues
+
+A priority queue retrieves elements in sorted order after they were inserted
+in arbitrary order. That is, whenever you call the remove method, you get the
+smallest element currently in the priority queue.
+
+Just like a TreeSet, a priority queue can either hold elements of a class that
+implements the Comparable interface or a Comparator object you supply in the
+constructor.
+
+A typical use for a priority queue is job scheduling. Each job has a priority.
+Jobs are added in random order. Whenever a new job can be started, the
+highest priority job is removed from the queue. (Since it is traditional for
+priority 1 to be the “highest” priority, the remove operation yields the minimum
+element.)
+
+## Maps
+
