@@ -369,3 +369,110 @@ AbstractCollection superclass of the LinkedList class.
 We recommend that you simply stay away from all methods that use an integer
 index to denote a position in a linked list. If you want random access into a
 collection, use an array or ArrayList, not a linked list.
+
+### Array Lists
+
+The List interface describes an ordered collection in which the
+position of elements matters. There are two protocols for visiting the elements:
+through an iterator and by random access with methods get and set. The latter
+is not appropriate for linked lists, but of course get and set make a lot of sense
+for arrays.
+
+The collections library supplies the familiar ArrayList class that
+also implements the List interface. An ArrayList encapsulates a dynamically
+reallocated array of objects.
+
+### Hash Sets
+
+#### Hash Table context
+
+If you don’t care about the ordering of the elements, there are data 
+structures that let you find elements much faster. The drawback is that 
+those data structures give you no control over the order in which the 
+elements appear.
+
+A well-known data structure for finding objects quickly is the **hash table**. A
+hash table computes an integer, called the hash code, for each object. A hash code is somehow derived from the 
+instance fields of an object, 
+preferably in such a way that objects with different data yield different 
+codes.
+
+If you define your own classes, you are responsible for implementing your
+own hashCode method. Your implementation needs to be compatible with the 
+equals method: If a.equals(b), then a and b must have the same hash code.
+
+In Java, hash tables are implemented as arrays of linked lists. Each list is
+called a bucket. . If the hash codes are reasonably randomly distributed and the
+number of buckets is large enough, only a few comparisons should be
+necessary to find an object.
+
+> As of Java 8, the buckets change from linked lists into balanced binary
+trees when they get full. This improves performance if a hash function was
+poorly chosen and yields many collisions, or if malicious code tries to flood a
+hash table with many values that have identical hash codes.
+
+If you want more control over the performance of the hash table, you can
+specify the initial bucket count. The bucket count gives the number of buckets
+used to collect objects with identical hash values. If too many elements are
+inserted into a hash table, the number of collisions increases and retrieval
+performance suffers.
+
+If you know how many elements, approximately, will eventually be in the
+table, you can set the bucket count. Typically, you should set it to somewhere
+between 75% and 150% of the expected element count.
+
+Of course, you do not always know how many elements you need to store,
+or your initial guess may be too low. If the hash table gets too full, it needs
+to be rehashed. To rehash the table, a table with more buckets is created, all
+elements are inserted into the new table, and the original table is discarded.
+The load factor determines when a hash table is rehashed. For example, if the
+load factor is 0.75 (which is the default) and the table is more than 75% full, it
+is automatically rehashed with twice as many buckets. For most applications,
+it is reasonable to leave the load factor at 0.75.
+
+#### HashSet
+
+Hash tables can be used to implement several important data structures. The
+simplest among them is the **set type**. A set is a collection of elements without
+duplicates. The add method of a set first tries to find the object to be added,
+and adds it only if it is not yet present.
+
+The Java collections library supplies a **HashSet class** that implements a set based
+on a hash table. You add elements with the add method. The contains method
+is redefined to make a fast lookup to see if an element is already present in
+the set. It checks only the elements in one bucket and not all elements in the
+collection.
+
+The hash set iterator visits all buckets in turn. Since hashing scatters the elements around in the table, they are visited in a seemingly random order. You
+would only use a HashSet if you don’t care about the ordering of the elements
+in the collection.
+
+### TreeSet
+
+The TreeSet class is similar to the hash set, with one added improvement. A
+tree set is a sorted collection.
+You insert elements into the collection in any
+order. When you iterate through the collection, the values are automatically
+presented in sorted order.
+
+As the name of the
+class suggests, the sorting is accomplished by a tree data structure. Every time an element is added to a tree, it is placed into its proper sorting
+position. Therefore, the iterator always visits the elements in sorted order.
+
+Adding an element to a tree is slower than adding it to a hash table. But it is still much faster than checking 
+for duplicates in an array or linked list. If the tree contains n elements, then an average
+of log2 n comparisons are required to find the correct position for the new
+element.
+
+> In order to use a tree set, you must be able to compare the elements.
+The elements must implement the Comparable interface, or you must supply a
+Comparator when constructing the set.
+
+Any two elements must be
+comparable, and the comparison can only be zero if the elements are equal.
+
+> As of Java 6, the TreeSet class implements the NavigableSet interface. That
+interface adds several convenient methods for locating elements and for
+backward traversal.
+
+### Queues and Deques
