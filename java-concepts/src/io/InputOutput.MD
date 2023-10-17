@@ -273,3 +273,59 @@ try (BufferedReader in =
 
 Nowadays, the BufferedReader class also has a lines method that yields a Stream<String>.
 However, unlike a Scanner, a BufferedReader has no methods for reading numbers.
+
+## Character Encodings
+
+Input and output streams are for sequences of bytes, but in many cases you will
+work with texts that is, sequences of characters. It then matters how characters
+are encoded into bytes.
+
+Java uses the Unicode standard for characters. Each character or “code point”
+has a 21-bit integer number. There are different character encodings—methods for
+packaging those 21-bit numbers into bytes.
+
+The most common encoding is UTF-8, which encodes each Unicode code point
+into a sequence of one to four bytes. UTF-8 has the advantage that
+the characters of the traditional ASCII character set, which contains all characters
+used in English, only take up one byte each.
+
+Another common encoding is UTF-16, which encodes each Unicode code point
+into one or two 16-bit values (see Table 2.2). This is the encoding used in Java
+strings. Actually, there are two forms of UTF-16, called “big-endian” and “little-endian.” 
+Consider the 16-bit value 0x2122. In big-endian format, the more significant
+byte comes first: 0x21 followed by 0x22. In little-endian format, it is the other way
+around: 0x22 0x21. To indicate which of the two is used, a file can start with the
+“byte order mark,” the 16-bit quantity 0xFEFF. A reader can use this value to
+determine the byte order and discard it.
+
+There is no reliable way to automatically detect the character encoding from a
+stream of bytes. Some API methods let you use the “default charset”—the char-
+acter encoding preferred by the operating system of the computer. Is that the
+same encoding that is used by your source of bytes? These bytes may well originate
+from a different part of the world. Therefore, you should always explicitly specify
+the encoding. For example, when reading a web page, check the Content-Type
+header.
+
+The **StandardCharsets** class has static variables of type Charset for the character encodings
+that every Java virtual machine must support:
+
+```java
+StandardCharsets.UTF_8
+StandardCharsets.UTF_16
+StandardCharsets.UTF_16BE
+StandardCharsets.UTF_16LE
+StandardCharsets.ISO_8859_1
+StandardCharsets.US_ASCII
+```
+
+Use the Charset object when reading or writing text. For example, you can turn an
+array of bytes into a string as
+
+```java
+String str = new String(bytes, StandardCharsets.UTF_8);
+```
+
+# Reading and Writing Binary Data
+
+Text format is convenient for testing and debugging because it is humanly read-
+able, but it is not as efficient as transmitting data in binary format.
