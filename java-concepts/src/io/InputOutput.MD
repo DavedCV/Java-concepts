@@ -494,3 +494,173 @@ When reading back the objects, the procedure is reversed.
    between the serial number and the object reference.
 2. When the tag “same as the previously saved object with serial number x” is
    encountered, retrieve the object reference for the sequence number.
+
+## Modifying the Default Serialization Mechanism
+
+Certain data fields should never be serialized—for example, integer values that
+store file handles or handles of windows that are only meaningful to native
+methods. Such information is guaranteed to be useless when you reload an object
+at a later time or transport it to a different machine. In fact, improper values for
+such fields can actually cause native methods to crash. Java has an easy mechanism
+to prevent such fields from ever being serialized: Mark them with the keyword
+**transient**.
+
+The serialization mechanism provides a way for individual classes to add 
+validation or any other desired action to the default read and write 
+behavior. A serializable class can define methods with the signature
+
+```java
+private void readObject(ObjectInputStream in)
+    throws IOException, ClassNotFoundException;
+private void writeObject(ObjectOutputStream out)
+    throws IOException;
+```
+
+Then, the data fields are no longer automatically serialized, and these methods
+are called instead.
+
+---
+### Example
+
+A number of classes in the java.awt.geom package, such
+as Point2D.Double, are not serializable. Now, suppose you want to serialize a class
+LabeledPoint that stores a String and a Point2D.Double. First, you need to mark the
+Point2D.Double field as transient to avoid a NotSerializableException.
+
+```java
+public class LabeledPoint implements Serializable
+{
+    private String label;
+    private transient Point2D.Double point;
+    ...
+}
+```
+
+In the writeObject method, we first write the object descriptor and the String field,
+label, by calling the defaultWriteObject method. This is a special method of the
+ObjectOutputStream class that can only be called from within a writeObject method of a
+serializable class. Then we write the point coordinates, using the standard DataOutput
+calls.
+
+In the readObject method, we reverse the process:
+
+```java
+private void writeObject(ObjectOutputStream out) throws IOException
+{
+    out.defaultWriteObject();
+    out.writeDouble(point.getX());
+    out.writeDouble(point.getY());
+}
+
+private void readObject(ObjectInputStream in) throws IOException
+{
+    in.defaultReadObject();
+    double x = in.readDouble();
+    double y = in.readDouble();
+    point = new Point2D.Double(x, y);
+}
+```
+---
+
+Instead of letting the serialization mechanism save and restore object data, a class
+can define its own mechanism. To do this, a class must implement the Externalizable
+interface. This, in turn, requires it to define two methods:
+
+```java
+public void readExternal(ObjectInputStream in)
+throws IOException, ClassNotFoundException;
+public void writeExternal(ObjectOutputStream out)
+throws IOException;
+```
+
+Unlike the readObject and writeObject methods that were described in the previous
+section, these methods are fully responsible for saving and restoring the entire
+object, including the superclass data. When writing an object, the serialization
+mechanism merely records the class of the object in the output stream. When
+reading an externalizable object, the object input stream creates an object with
+the no-argument constructor and then calls the readExternal method.
+
+```java
+public void readExternal(ObjectInput s) throws IOException
+{
+    name = s.readUTF();
+    salary = s.readDouble();
+    hireDay = LocalDate.ofEpochDay(s.readLong());
+}
+
+public void writeExternal(ObjectOutput s) throws IOException
+{
+    s.writeUTF(name);
+    s.writeDouble(salary);
+    s.writeLong(hireDay.toEpochDay());
+}
+```
+
+## Versioning
+
+If you use serialization to save objects, you need to consider what happens when
+your program evolves. Can version 1.1 read the old files? Can the users who still
+use 1.0 read the files that the new version is producing? Clearly, it would be
+desirable if object files could cope with the evolution of classes.
+
+At first glance, it seems that this would not be possible. When a class definition
+changes in any way, its SHA fingerprint also changes, and you know that object
+input streams will refuse to read in objects with different fingerprints. However,
+a class can indicate that it is compatible with an earlier version of itself. To do this,
+you must first obtain the fingerprint of the earlier version of the class.
+
+Use the standalone serialver program that is part of the JDK to obtain this number. For
+example, running:
+
+```bash
+serialver Employee
+> Employee: static final long serialVersionUID = -1814239825517340645L;
+```
+
+All later versions of the class must define the serialVersionUID constant to the same
+fingerprint as the original.
+
+```java
+class Employee implements Serializable // version 1.1
+{
+    ...
+    public static final long serialVersionUID = -1814239825517340645L;
+}
+```
+
+When a class has a static data member named serialVersionUID, it will not compute
+the fingerprint manually but will use that value instead.
+
+Once that static data member has been placed inside a class, the serialization
+system is now willing to read in different versions of objects of that class.
+
+If only the methods of the class change, there is no problem with reading the new
+object data. However, if the data fields change, you may have problems. For example, 
+the old file object may have more or fewer data fields than the one in the
+program, or the types of the data fields may be different. In that case, the object
+input stream makes an effort to convert the serialized object to the current version
+of the class.
+
+The object input stream compares the data fields of the current version of the
+class with those of the version in the serialized object. Of course, the object input
+stream considers only the nontransient and nonstatic data fields. If two fields
+have matching names but different types, the object input stream makes no effort
+to convert one type to the other—the objects are incompatible. If the serialized
+object has data fields that are not present in the current version, the object input
+stream ignores the additional data. If the current version has data fields that are
+not present in the serialized object, the added fields are set to their default (null
+for objects, zero for numbers, and false for boolean values).
+
+## Using Serialization for Cloning
+
+There is an amusing use for the serialization mechanism: It gives you an easy
+way to clone an object, provided the class is serializable. Simply serialize it to an
+output stream and then read it back in. The result is a new object that is a deep
+copy of the existing object. You don’t have to write the object to a file—you can
+use a ByteArrayOutputStream to save the data into a byte array.
+
+You should be aware that this method, although clever, will usually be much
+slower than a clone method that explicitly constructs a new object and copies or
+clones the data fields.
+
+# Working with Files

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.util.Scanner;
+import io.Employee;
 
 public class TextFileTest {
     public static void main(String[] args) throws IOException {
