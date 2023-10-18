@@ -3,9 +3,12 @@ package collections;
 import java.time.LocalDate;
 import java.util.PriorityQueue;
 
-public class PriorityQueueTest {
+public class PriorityQueueMaxTest {
     public static void main(String[] args) {
-        var pq = new PriorityQueue<LocalDate>();
+
+        // to use a max priorityQueue change the order using a comparator
+        var pq = new PriorityQueue<LocalDate>((el1, el2) -> -1 * el1.compareTo(el2));
+
         pq.add(LocalDate.of(1906, 12, 9)); // G. Hopper
         pq.add(LocalDate.of(1815, 12, 10)); // A. Lovelace
         pq.add(LocalDate.of(1903, 12, 3)); // J. von Neumann

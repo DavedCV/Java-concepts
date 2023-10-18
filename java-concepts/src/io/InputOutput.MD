@@ -329,3 +329,168 @@ String str = new String(bytes, StandardCharsets.UTF_8);
 
 Text format is convenient for testing and debugging because it is humanly read-
 able, but it is not as efficient as transmitting data in binary format.
+
+## The DataInput and DataOutput interfaces
+
+The DataOutput interface defines the following methods for writing a number, a
+character, a boolean value, or a string in binary format:
+
+```java
+writeChars
+writeByte
+writeInt
+writeShort
+writeLong
+writeFloat
+writeDouble
+writeChar
+writeBoolean
+writeUTF
+```
+
+For example, writeInt always writes an integer as a 4-byte binary quantity regardless
+of the number of digits, and writeDouble always writes a double as an 8-byte binary
+quantity. The resulting output is not human-readable, but the space needed will
+be the same for each value of a given type and reading it back in will be faster
+than parsing text.
+
+To read the data back in, use the following methods defined in the DataInput
+interface:
+
+```java
+readInt
+readShort
+readLong
+readFloat
+readDouble
+readChar
+readBoolean
+readUTF
+```
+
+To read binary data from a file, combine a DataInputStream with a source 
+of bytes such as a FileInputStream:
+
+```java
+DataInputStream in = new DataInputStream(new FileInputStream("employee.dat"));
+```
+
+Similarly, to write binary data, use the DataOutputStream class that implements the
+DataOutput interface:
+
+```java
+DataOutputStream out = new DataOutputStream(new FileOutputStream("employee.dat"));
+```
+
+## Random Access Bytes
+
+The RandomAccessFile class lets you read or write data anywhere in a file. Disk files
+are random-access, but input/output streams that communicate with a network
+socket are not.
+
+You can open a random-access file either for reading only or for
+both reading and writing; specify the option by using the string "r" (for read access)
+or "rw" (for read/write access) as the second argument in the constructor.
+
+```java
+RandomAccessFile in = new RandomAccessFile("employee.dat", "r");
+RandomAccessFile inOut = new RandomAccessFile("employee.dat", "rw");
+```
+
+**When you open an existing file as a RandomAccessFile, it does not get deleted.**
+
+A random-access file has a **file pointer** that indicates the position of the next byte
+to be read or written. The **seek method** can be used to set the file pointer to an 
+arbitrary byte position within the file. The argument to seek is a long integer between
+zero and the length of the file in bytes.
+
+The **getFilePointer** method returns the current position of the file pointer.
+
+The RandomAccessFile class implements both the DataInput and DataOutput interfaces.
+
+# Object Input/Output Streams and Serialization
+
+Using a fixed-length record format is a good choice if you need to store data of
+the same type. However, objects that you create in an object-oriented program
+are rarely all of the same type.
+
+The Java language
+supports a very general mechanism, called object serialization, that makes it possible
+to write any object to an output stream and read it again later.
+
+## Saving and Loading Serializable Objects
+
+To save object data, you first need to open an ObjectOutputStream object:
+
+```java
+ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("employee.dat"));
+```
+
+Now, to save an object, simply use the writeObject method of the ObjectOutputStream
+class as in the following fragment:
+
+```java
+Employee harry = new Employee("Harry Hacker", 50000, 1989, 10, 1);
+Manager boss = new Manager("Carl Cracker", 80000, 1987, 12, 15);
+out.writeObject(harry);
+out.writeObject(boss);
+```
+
+To read the objects back in, first get an ObjectInputStream object:
+
+```java
+ObjectInputStream in = new ObjectInputStream(new FileInputStream("employee.dat"));
+```
+
+Then, retrieve the objects in the same order in which they were written, using the
+readObject method:
+
+```java
+Employee e1 = (Employee) in.readObject();
+Employee e2 = (Employee) in.readObject();
+```
+
+There is, however, one change you need to make to any class that you want to
+save to an output stream and restore from an object input stream. The class must
+implement the Serializable interface:
+
+```java
+class Employee implements Serializable { . . . }
+```
+
+The Serializable interface has no methods, so you don’t need to change your classes
+in any way.
+
+> You can write and read only objects with the writeObject/readObject
+methods. For primitive type values, use methods such as writeInt/readInt or
+writeDouble/readDouble. (The object input/output stream classes implement the
+DataInput/DataOutput interfaces.)
+
+Behind the scenes, an ObjectOutputStream looks at all the fields of the objects and saves
+their contents. For example, when writing an Employee object, the name, date, and
+salary fields are written to the output stream.
+
+However, there is one important situation that we need to consider: What happens
+when one object is shared by several objects as part of its state?
+
+Saving such a network of objects is a challenge. Of course, we cannot save and
+restore the memory addresses for the secretary objects. When an object is
+reloaded, it will likely occupy a completely different memory address than it
+originally did.
+
+Instead, each object is saved with the serial number, hence the name object
+serialization for this mechanism. Here is the algorithm:
+
+1. Associate a serial number with each object reference that you encounter.
+2. When encountering an object reference for the first time, save the object data
+   to the output stream.
+3. If it has been saved previously, just write “same as the previously saved object
+   with serial number x.”
+
+When reading back the objects, the procedure is reversed.
+
+1. When an object is specified in an object input stream for the first time, con-
+   struct it, initialize it with the stream data, and remember the association
+   between the serial number and the object reference.
+2. When the tag “same as the previously saved object with serial number x” is
+   encountered, retrieve the object reference for the sequence number.
