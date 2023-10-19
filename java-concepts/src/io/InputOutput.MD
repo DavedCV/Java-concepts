@@ -228,6 +228,21 @@ PrintWriter out = new PrintWriter(
     true); // autoflush
 ```
 
+The print methods don’t throw exceptions. You can call the checkError method to
+see if something went wrong with the output stream.
+
+> Java veterans might wonder whatever happened to the PrintStream class
+and to System.out. In Java 1.0, the PrintStream class simply truncated all Unicode
+characters to ASCII characters by dropping the top byte. (At the time, Unicode
+was still a 16-bit encoding.) Clearly, that was not a clean or portable approach,
+and it was fixed with the introduction of readers and writers in Java 1.1. For
+compatibility with existing code, System.in, System.out, and System.err are still
+input/output streams, not readers and writers. But now the PrintStream class inter-
+nally converts Unicode characters to the default host encoding in the same way
+the PrintWriter does. Objects of type PrintStream act exactly like print writers when
+you use the print and println methods, but unlike print writers they allow you to
+output raw bytes with the write(int) and write(byte[]) methods.
+
 ## How To Read Text Input
 
 The easiest way to process arbitrary text is the Scanner class that we used extensively
@@ -664,3 +679,299 @@ slower than a clone method that explicitly constructs a new object and copies or
 clones the data fields.
 
 # Working with Files
+
+The Path interface and Files class encapsulate the functionality required to work with the file system on the user’s
+machine. For example, the Files class can be used to remove or rename the file,
+or to find out when a file was last modified. In other words, the input/output
+stream classes are concerned with the contents of files, whereas the classes that
+we discuss here are concerned with the storage of files on a disk.
+
+The **Path** interface and **Files** class were added in Java SE 7.
+
+## Paths
+
+A Path is a sequence of directory names, optionally followed by a file name. The
+first component of a path may be a root component such as / or C:\. The permissible
+root components depend on the file system. A path that starts with a root 
+component is absolute. Otherwise, it is relative. For example, here we construct an absolute
+and a relative path. For the absolute path, we assume a UNIX-like file system.
+
+```java
+Path absolute = Paths.get("/home", "harry");
+Path relative = Paths.get("myprog", "conf", "user.properties");
+```
+
+> A path does not have to correspond to a file that actually exists. It is
+merely an abstract sequence of names. As you will see in the next section, when
+you want to create a file, you first make a path and then call a method to create
+the corresponding file.
+
+- The static **Paths.get** method receives one or more strings, which it joins with the
+  path separator of the default file system (/ for a UNIX-like file system, \ for
+  Windows). It then parses the result, throwing an InvalidPathException if the result is
+  not a valid path in the given file system. The result is a Path object.
+
+  The get method can get a single string containing multiple components. For
+  example, you can read a path from a configuration file like this:
+
+   ```java
+   String baseDir = props.getProperty("base.dir");
+   
+   // May be a string such as /opt/myprog or c:\Program Files\myprog
+   Path basePath = Paths.get(baseDir); // OK that baseDir has separators
+   ```
+
+- It is very common to combine or resolve paths. The call **p.resolve(q)** returns a path
+  according to these rules:
+
+  - If q is absolute, then the result is q.
+  - Otherwise, the result is “p then q,” according to the rules of the file system.
+
+  For example, suppose your application needs to find its working directory relative
+  to a given base directory that is read from a configuration file, as in the preceding
+  example.
+
+   ```java
+   Path workRelative = Paths.get("work");
+   Path workPath = basePath.resolve(workRelative);
+   ```
+
+  There is a shortcut for the resolve method that takes a string instead of a path:
+
+   ```java
+   Path workPath = basePath.resolve("work");
+   ```
+  
+- There is a convenience method **resolveSibling** that resolves against a path’s parent,
+  yielding a sibling path. For example, if workPath is /opt/myapp/work, the call
+  creates /opt/myapp/temp
+
+```java
+Path tempPath = workPath.resolveSibling("temp"); // /opt/myapp/temp
+```
+
+- The opposite of resolve is **relativize**. The call p.relativize(r) yields the path q which,
+  when resolved with p, yields r. For example, relativizing "/home/harry" against
+  "/home/fred/input.txt" yields "../fred/input.txt". Here, we assume that .. denotes the
+  parent directory in the file system.
+
+- The **normalize** method removes any redundant . and .. components (or whatever
+  the file system may deem redundant). For example, normalizing the path
+  /home/harry/../fred/./input.txt yields /home/fred/input.txt.
+
+- The **toAbsolutePath** method yields the absolute path of a given path, starting at a root
+  component, such as /home/fred/input.txt or c:\Users\fred\input.txt.
+
+- The Path interface has many useful methods for taking paths apart. This code
+  sample shows some of the most useful ones:
+   
+   ```java
+   Path p = Paths.get("/home", "fred", "myprog.properties");
+   Path parent = p.getParent(); // the path /home/fred
+   Path file = p.getFileName(); // the path myprog.properties
+   Path root = p.getRoot(); // the path /
+   ```
+  
+## Reading and Writing Files
+
+The Files class makes quick work of common file operations.
+
+- You can easily read the entire contents of a file:
+
+   ```java
+   byte[] bytes = Files.readAllBytes(path);
+   
+   // If you want to read the file as a string
+   String content = new String(bytes, charset);
+   
+   // If you want the file as a sequence of lines
+   List<String> lines = Files.readAllLines(path, charset);
+   ```
+
+- Conversely, if you want to write a string
+
+   ```java
+   Files.write(path, content.getBytes(charset));
+   
+   // To append to a given file, use
+   Files.write(path, content.getBytes(charset), StandardOpenOption.APPEND);
+   
+   // You can also write a collection of lines with
+   Files.write(path, lines);
+   ```
+
+- These simple methods are intended for dealing with text files of moderate length.
+If your files are large or binary, you can still use the familiar input/output streams
+or readers/writers:
+
+   ```java
+   InputStream in = Files.newInputStream(path);
+   OutputStream out = Files.newOutputStream(path);
+   Reader in = Files.newBufferedReader(path, charset);
+   Writer out = Files.newBufferedWriter(path, charset);
+   ```
+   
+   These convenience methods save you from dealing with FileInputStream, FileOutputStream,
+   BufferedReader, or BufferedWriter.
+
+## Creating Files and Directories 
+
+- To create a new directory, call:
+
+   ```java
+   // All but the last component in the path must already exist.
+   Files.createDirectory(path);
+   ```
+
+- To create intermediate directories use:
+
+   ```java
+   Files.createDirectories(path);
+   ```
+
+- You can create an empty file with
+
+   ```java
+   Files.createFile(path);
+   ```
+   
+   The call throws an exception if the file already exists. The check for existence and
+   creation are atomic. If the file doesn’t exist, it is created before anyone else has
+   a chance to do the same.
+
+
+- There are convenience methods for creating a temporary file or directory in a
+given or system-specific location.
+
+   ```java
+   Path newPath = Files.createTempFile(dir, prefix, suffix);
+   Path newPath = Files.createTempFile(prefix, suffix);
+   Path newPath = Files.createTempDirectory(dir, prefix);
+   Path newPath = Files.createTempDirectory(prefix);
+   ```
+   
+   Here, dir is a Path, and prefix/suffix are strings which may be null. For example, the
+   call Files.createTempFile(null, ".txt") might return a path such as /tmp/1234405522364837194.txt.
+
+  When you create a file or directory, you can specify attributes, such as owners or
+  permissions.
+
+## Copying, Moving, and Deleting Files
+
+- To copy a file from one location to another, simply call
+
+   ```java
+   Files.copy(fromPath, toPath);
+   ```
+   
+   The copy or move will fail if the target exists. If you want to overwrite an existing
+   target, use the REPLACE_EXISTING option. If you want to copy all file attributes, use the
+   COPY_ATTRIBUTES option. You can supply both like this:
+   
+   ```java
+   Files.copy(fromPath, toPath, StandardCopyOption.REPLACE_EXISTING,
+       StandardCopyOption.COPY_ATTRIBUTES);
+   ```
+
+- To move the file (that is, copy and delete the original), call
+
+   ```java
+   Files.move(fromPath, toPath);
+   ```
+  
+- You can also copy an input stream to a Path, which just means saving the input
+  stream to disk. Similarly, you can copy a Path to an output stream. Use the
+  following calls:
+
+   ```java
+   Files.copy(inputStream, toPath);
+   Files.copy(fromPath, outputStream);
+   ```
+
+- Finally, to delete a file, simply call. The deletion methods can also be used to remove an 
+  empty directory.
+
+   ```java
+   Files.delete(path);
+  
+   // evits exception
+   boolean deleted = Files.deleteIfExists(path);
+   ```
+  
+## Getting file information
+
+- The following static methods return a boolean value to check a property of a path:
+   - exists
+   - isHidden
+   - isReadable, isWritable, isExecutable
+   - isRegularFile, isDirectory, isSymbolicLink
+
+
+- The size method returns the number of bytes in a file.
+
+
+- All file systems report a set of basic attributes, encapsulated by the BasicFileAttributes
+  interface, which partially overlaps with that information. The basic file
+  attributes are:
+  - The times at which the file was created, last accessed, and last modified, as
+  instances of the class java.nio.file.attribute.FileTime
+  - Whether the file is a regular file, a directory, a symbolic link, or none of these
+  - The file size
+  - The file key—an object of some class, specific to the file system, that may or
+  may not uniquely identify a file
+
+  To get these attributes, call
+
+   ```java
+   BasicFileAttributes attributes = 
+           Files.readAttributes(path, BasicFileAttributes.class);
+   ```
+   
+   If you know that the user’s file system is POSIX-compliant, you can instead get
+   an instance of PosixFileAttributes
+
+## Visiting Directory Entries
+
+The static **Files.list** method returns a Stream<Path> that reads the entries of a directory.
+The directory is read lazily, making it possible to efficiently process directories
+with huge numbers of entries.
+
+Since reading a directory involves a system resource that needs to be closed, you
+should use a try block.
+
+````java
+try (Stream<Path> entries = Files.list(pathToDirectory)) {
+    ...
+}
+````
+
+The list method does not enter subdirectories. To process all descendants of a
+   directory, use the **Files.walk** method instead.
+
+```java
+try (Stream<Path> entries = Files.walk(pathToRoot)) {
+    // Contains all descendants, visited in depth-first order
+}
+```
+
+You can limit the depth of the tree that you want to visit by calling
+Files.walk(pathToRoot, depth).
+
+This code fragment uses the Files.walk method to copy one directory to another:
+
+```java
+Files.walk(source).forEach(p -> {
+    try {
+        Path q = target.resolve(source.relativize(p));
+        if (Files.isDirectory(p))
+            Files.createDirectory(q);
+        else 
+            Files.copy(p, q);
+    } catch (IOException ex) {
+        throw new UncheckedIOException(ex);
+    }
+});
+```
+
+Unfortunately, you cannot easily use the Files.walk method to delete a tree of direc-
+tories since you need to first delete the children before deleting the parent.

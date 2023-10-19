@@ -1,6 +1,7 @@
 package io.Streams;
 
 import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -10,12 +11,17 @@ public class BufferedOutStream {
         try (
                 FileOutputStream fout = new FileOutputStream("src/io/Streams/BufferedOutStreamTest.txt");
                 BufferedOutputStream bout = new BufferedOutputStream(fout);
+                DataOutputStream dout = new DataOutputStream(bout);
         ) {
-            String goal = "Learn java in depth";
+            String goal = "Learn java in depth\n";
             byte[] goalBytes = goal.getBytes();
+            dout.write(goalBytes);
 
-            bout.write(goalBytes);
-            bout.flush();
+            for (int i = 0; i < 255; i++) {
+                dout.writeUTF("Cadena " + i + "\n");
+            }
+
+            dout.flush();
         }
 
         System.out.println("Success...");
