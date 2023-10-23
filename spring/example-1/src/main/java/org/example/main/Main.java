@@ -8,23 +8,16 @@ public class Main {
         // creates an instance of the spring context and make Spring use the configuration class
         var context = new AnnotationConfigApplicationContext(ProjectConfig.class);
 
-        // parrot 1 (use the bean identifier and the class type)
-        Parrot p1 = context.getBean("parrot1", Parrot.class);
-        System.out.println(p1.getName());
+        Parrot p = context.getBean(Parrot.class);
 
-        // get bean with custom identifier
-        Parrot riki = context.getBean("Riki", Parrot.class);
-        System.out.println(riki.getName());
+        // Prints the default String representation of the instance taken from the Spring context
+        System.out.println(p);
 
-        // get primary or default bean of the same type
-        Parrot primary = context.getBean(Parrot.class);
-        System.out.println(primary.getName());
-
-        String s = context.getBean(String.class);
-        System.out.println(s);
-
-        Integer n = context.getBean(Integer.class);
-        System.out.println(n);
+        // Prints null because we did
+        //not assign any name to the
+        //parrot instance added by
+        //Spring in its context
+        System.out.println(p.getName());
 
     }
 }

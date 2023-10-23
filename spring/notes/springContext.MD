@@ -273,3 +273,76 @@ If you’d like to give another name to the bean, you can use either one of the 
 - @Bean("miki")
 
 When you have multiple beans of the same kind in the Spring context you can make one of them primary. You mark the bean you want to be primary using the @Primary annotation. A primary bean is the one Spring will choose if it has multiple options and you don’t specify a name
+
+### Using stereotype annotations to add beans to the Spring context
+
+Spring offers you more ways to add beans to its context. In different scenarios, you’ll find using one of these approaches is more comfortable than another. For example, with stereotype annotations, you’ll observe you write less code to instruct Spring to add a bean to its context.
+
+With stereotype annotations, you add the annotation above the class for which you need to have an instance in the Spring context. When doing so, we say that you’ve marked the class as a component.
+
+When the app creates the Spring context, Spring creates an instance of the class you marked as a component and adds that instance to its context.
+
+We’ll still have a configuration class when we use this approach to tell
+Spring where to look for the classes annotated with stereotype annotations. Moreover, you can use both the approaches (using @Bean ans Stereotype annotations together).
+
+1. Using the @Component annotation, mark the classes for which you want Spring
+to add an instance to its context (in our case Parrot).
+2. Using @ComponentScan annotation over the configuration class, instruct Spring on where to find the classes you marked.
+
+In the parrto class:
+
+```java
+@Component
+public class Parrot {
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+```
+
+But wait! This code won’t work just yet. By default, Spring doesn’t search for classes annotated with stereotype annotations, so if we just leave the code as-is, Spring won’t add a bean of type Parrot in its context. To tell Spring it needs to search for classes annotated with stereotype annotations, we use the @ComponentScan annotation over the configuration class. Also, with the @ComponentScan annotation, we tell Spring where to look for these classes. We enumerate the packages where we defined the classes with stereotype annotations
+
+```java
+@Configuration
+// Using the basePackages attribute of the annotation, we tell Spring where to look
+//for classes annotated with stereotype annotations.
+@ComponentScan(basePackages = "org.example.main")
+public class ProjectConfig {
+}
+```
+
+Now you told Spring the following:
+
+1. Which classes to add an instance to its context (Parrot)
+2. Where to find these classes (using @ComponentScan)
+
+
+You can continue writing the main method as presented in the following listing to prove that Spring creates and adds the bean in its context.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        // creates an instance of the spring context and make Spring use the configuration class
+        var context = new AnnotationConfigApplicationContext(ProjectConfig.class);
+
+        Parrot p = context.getBean(Parrot.class);
+
+        // Prints the default String representation of the instance taken from the Spring context
+        System.out.println(p);
+
+        // Prints null because we did
+        //not assign any name to the
+        //parrot instance added by
+        //Spring in its context
+        System.out.println(p.getName());
+    }
+}
+```
+
+Running this application, you’ll observe Spring added a Parrot instance to its context because the first value printed is the default String representation of this instance. However, the second value printed is null because we did not assign any name to this parrot. Spring just creates the instance of the class, but it’s still our duty if we want to change this instance in any way afterward (like assigning it a name).
