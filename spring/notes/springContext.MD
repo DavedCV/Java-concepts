@@ -346,3 +346,52 @@ public class Main {
 ```
 
 Running this application, you’ll observe Spring added a Parrot instance to its context because the first value printed is the default String representation of this instance. However, the second value printed is null because we did not assign any name to this parrot. Spring just creates the instance of the class, but it’s still our duty if we want to change this instance in any way afterward (like assigning it a name).
+
+#### Using @PostConstruct to manage the instance after its creation
+
+As we’ve discussed in this section, using stereotype annotations you instruct Spring to create a bean and add it to its context. But, unlike using the @Bean annotation, you don’t have full control over the instance creation.
+
+What if we want to execute some instructions right after Spring creates the bean? We can use the @PostConstruct annotation.
+
+You just need to define a method in the component class and annotate that method with @PostConstruct, which instructs Spring to call that method after the constructor finishes its execution.
+
+Let’s add to pom.xml the Maven dependency needed to use the @PostConstruct
+annotation:
+
+```xml
+<dependency>
+  <groupId>javax.annotation</groupId>
+  <artifactId>javax.annotation-api</artifactId>
+  <version>1.3.2</version>
+</dependency>
+```
+
+Now you can define a method in the Parrot class:
+
+```java
+@Component
+public class Parrot {
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @PostConstruct
+    public void init() {
+        this.name = "Kiki";
+    }
+}
+```
+
+Very similarly, but less encountered in real-world apps, you can use an annotation named @PreDestroy. With this annotation, you define a method that Spring calls immediately before closing and clearing the context.
+
+### Comparison
+
+In real-world scenarios you’ll use stereotype annotations as much as possible (because this approach implies writing less code), and you’ll only use the @Bean when you can’t add the bean otherwise (e.g., you create the bean for a class that is part of a library so you cannot modify that class to add the stereotype annotation).
+
+![](./comparisonAddBeans.png)
