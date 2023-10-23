@@ -104,6 +104,14 @@ parrot class:
 ```java
 public class Parrot {
     private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }
 ```
 
@@ -154,6 +162,114 @@ Remember that the reason you learn to add beans to the Spring context is that Sp
 
 The steps you need to follow to add a bean to the Spring context using the @Bean annotation are as follows:
 
-1. Define a configuration class (annotated with @Configuration) for your project, which, as we’ll discuss later, we use to configure the context of Spring.
-2. Add a method to the configuration class that returns the object instance you want to add to the context and annotate the method with the @Bean annotation.
-3. Make Spring use the configuration class defined in step 1. As you’ll learn later, we use configuration classes to write different configurations for the framework.
+1. **Define a configuration class (annotated with @Configuration) for your project, which, as we’ll discuss later, we use to configure the context of Spring.**
+
+The first step is to create a configuration class in the project. A Spring configuration class is characterized by the fact that it is annotated with the @Configuration annotation. We use the configuration classes to define various Spring-related configurations for the project.
+
+2. **Add a method to the configuration class that returns the object instance you want to add to the context and annotate the method with the @Bean annotation.**
+
+One of the things you can do with a configuration class is add beans to the Spring context. To do this, we need to define a method that returns the object instance we wish to add to the context and annotate that method with the @Bean annotation, which lets Spring know that it needs to call this method when it initializes its context and adds the returned value to the context.
+
+3. **Make Spring use the configuration class defined in step 1. As you’ll learn later, we use configuration classes to write different configurations for the framework.**
+
+We’ve implemented a configuration class in which we tell Spring the object instance that needs to become a bean. Now we need to make sure Spring uses this configuration class when initializing its context
+
+![](./addingBeanToContext.png)
+
+configuration class:
+```java
+@Configuration
+public class ProjectConfig {
+
+    @Bean
+    Parrot parrot() {
+        var p = new Parrot();
+        p.setName("Koko");
+        return p;
+    }
+}
+```
+
+main class:
+```java
+public class Main {
+    public static void main(String[] args) {
+        // creates an instance of the spring context and make Spring use the configuration class
+        var context = new AnnotationConfigApplicationContext(ProjectConfig.class);
+    }
+}
+```
+
+> A configuration class is a special class in Spring applications that we use to instruct Spring to do specific actions. For example, we can tell Spring to create beans or to enable certain functionalities
+
+To verify the Parrot instance is indeed part of the context now, you can refer to the instance and print its name in the console:
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        // creates an instance of the spring context and make Spring use the configuration class
+        var context = new AnnotationConfigApplicationContext(ProjectConfig.class);
+
+        Parrot p = context.getBean(Parrot.class);
+        System.out.println(p.getName());
+
+    }
+}
+```
+
+You can add any kind of object to the Spring context:
+
+```java
+public class ProjectConfig {
+
+    @Bean
+    Parrot parrot() {
+        var p = new Parrot();
+        p.setName("Koko");
+        return p;
+    }
+
+    @Bean
+    String hello() {
+        return "Hello";
+    }
+
+    @Bean
+    Integer ten() {
+        return 10;
+    }
+}
+```
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        // creates an instance of the spring context and make Spring use the configuration class
+        var context = new AnnotationConfigApplicationContext(ProjectConfig.class);
+
+        Parrot p = context.getBean(Parrot.class);
+        System.out.println(p.getName());
+
+        String s = context.getBean(String.class);
+        System.out.println(s);
+
+        Integer n = context.getBean(Integer.class);
+        System.out.println(n);
+
+    }
+}
+```
+
+Thus far we added one or more beans of different types to the Spring context. You can add more beans of the same type to the Spring context by using multiple methods annotated with @Bean. 
+
+Of course, you can’t get the beans from the context anymore by only specifying the type. If you do, you’ll get an exception because Spring cannot guess which instance you’ve declared you refer to.
+
+To solve this ambiguity problem, you need to refer precisely to one of the instances by using the bean’s name. By default, Spring uses the names of the methods annotated with @Bean as the beans’ names themselves.
+
+If you’d like to give another name to the bean, you can use either one of the name or the value attributes of the @Bean annotation. Any of the following syntaxes will change the name of the bean in "miki":
+
+- @Bean(name = "miki")
+- @Bean(value = "miki")
+- @Bean("miki")
+
+When you have multiple beans of the same kind in the Spring context you can make one of them primary. You mark the bean you want to be primary using the @Primary annotation. A primary bean is the one Spring will choose if it has multiple options and you don’t specify a name
