@@ -85,7 +85,7 @@ Adding a dependency to the pom.xml:
 </project>
 ```
 
-## Adding new beans to the Spring context
+## 2.2 Adding new beans to the Spring context
 
 You’ll find out that you have multiple ways to add beans in the Spring context such that Spring can manage them and plug features it provides into your app.
 
@@ -423,3 +423,49 @@ The **registerBean()** has four parameters:
 1. **String beanName:** Use the first parameter beanName to define a name for the bean you add in the Spring context. If you don’t need to give a name to the bean you’re adding, you can use null as a value when you call the method.
 2. **Class<T> beanClass:** The second parameter is the class that defines the bean you add to the context. Say you want to add an instance of the class Parrot; the value you give to this parameter is Parrot.class.
 3. **Supplier<T> supplier:** The third parameter is an instance of Supplier. The implementation of this Supplier needs to return the value of the instance you add to the context. Remember, Supplier is a functional interface you find in the java.util.function package. The purpose of a supplier implementation is to return a value you define without taking parameters. 
+4. **BeanDefinitionCustomizer... customizers:** The fourth and last parameter is a varargs of BeanDefinitionCustomizer. (If this doesn’t sound familiar, that’s okay; the BeanDefinitionCustomizer is just an interface you implement to configure different characteristics of the bean; e.g.,making it primary.) Being defined as a varargs type, you can omit this parameter entirely, or you can give it more values of type BeanDefinitionCustomizer.
+
+Example:
+
+```java
+@Configuration
+public class ProjectConfig {
+}
+```
+
+```java
+public class Parrot {
+    private String name;
+    // Omitted getters and setters
+}
+```
+
+Using the registerBean() method:
+```java
+public class Main {
+    public static void main(String[] args) {
+        // creates an instance of the spring context and make Spring use the configuration class
+        var context = new AnnotationConfigApplicationContext(ProjectConfig.class);
+
+        // we create the instance we want to add programmatically
+        Parrot x = new Parrot();
+        x.setName("Kiki");
+
+        // We define a Supplier to return this instance.
+        Supplier<Parrot> parrotSupplier = () -> x;
+
+        // We call the registerBean() method to add the instance to the Spring context.
+        context.registerBean("parrot1", Parrot.class, parrotSupplier);
+        
+        // To verify the bean is now in the
+        //context, we refer to the parrot bean
+        //and print its name in the console.
+        Parrot p = context.getBean(Parrot.class);
+        System.out.println(p.getName());
+    }
+}
+```
+
+![](/registerBeanMethod.png)
+
+Use one or more bean configurator instances as the last parameters to set different characteristics of the beans you add.
