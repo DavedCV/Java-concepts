@@ -16,13 +16,17 @@ public class ProjectConfig {
     }
 
     @Bean
-    public Person person() {
+    // We instruct Spring to provide a bean
+    //from its context by defining a parameter
+    //for the method.
+    public Person person(Parrot parrot) {
         Person p = new Person();
         p.setName("Ella");
 
-        // Setting the reference of the parrot
-        // bean to the person’s parrot attribute
-        p.setParrot(parrot());
+        //We set the value of the person’s
+        //attribute with the reference
+        //Spring provided.
+        p.setParrot(parrot);
 
         return p;
     }

@@ -152,3 +152,46 @@ It might look strange at first, but Spring is smart enough to understand that by
 ![](/wiringBeansSpringLogic.png)
 
 It’s actually quite easy to test this behavior. Just add a no-args constructor to the Parrot class and print a message into the console from it. How many times will the message be printed in the console? If the behavior is correct, you’ll see the message only once.
+
+### Wiring the beans using the @Bean annotated method’s parameters
+
+Instead of directly calling the method that defines the bean we wish to refer to, we add a parameter to the method of the corresponding type of object, and we rely on Spring to provide us a value through that parameter.
+
+This approach is a bit more flexible than the one we discussed. With this approach, it doesn’t matter if the bean we want to refer to is defined with a method annotated with @Bean or using a stereotype annotation like @Component
+
+Take a look at the person() method. It now receives a parameter of type Parrot, and I set the reference of that parameter to the returned person’s attribute. When calling the method, Spring knows it has to find a parrot bean in its context and inject its value into the parameter of the person() method.
+
+```java
+@Configuration
+public class ProjectConfig {
+
+    @Bean
+    public Parrot parrot() {
+        Parrot p = new Parrot();
+        p.setName("Koko");
+        return p;
+    }
+
+    @Bean
+    // We instruct Spring to provide a bean
+    //from its context by defining a parameter
+    //for the method.
+    public Person person(Parrot parrot) {
+        Person p = new Person();
+        p.setName("Ella");
+        
+        //We set the value of the person’s
+        //attribute with the reference
+        //Spring provided.
+        p.setParrot(parrot);
+
+        return p;
+    }
+}
+```
+
+DI is a technique involving the framework setting a value into a specific field or parameter. In our case, Spring sets a particular value into the parameter of the person() method when calling it and resolves a dependency of this method. DI is an application of the IoC principle, and IoC implies that the framework controls the application at execution.
+
+![](/DIfigure.png)
+
+You’ll often use DI (and not only in Spring) because it’s a very comfortable way to manage object instances that are created and help us minimize the code we write when developing our apps.
