@@ -395,3 +395,31 @@ Very similarly, but less encountered in real-world apps, you can use an annotati
 In real-world scenarios you’ll use stereotype annotations as much as possible (because this approach implies writing less code), and you’ll only use the @Bean when you can’t add the bean otherwise (e.g., you create the bean for a class that is part of a library so you cannot modify that class to add the stereotype annotation).
 
 ![](./comparisonAddBeans.png)
+
+### Programmatically adding beans to the Spring context
+
+We’ve had the option of programmatically adding beans to the Spring context with Spring 5, which offers great flexibility because it enables you to add new instances in the context directly by calling a method of the context instance.
+
+You’d use this approach when you want to implement a custom way of adding beans to the context and the @Bean or the stereotype annotations are not enough for your needs. Say you need to register specific beans in the Spring context depending on specific configurations of your application.
+
+```java
+if (condition) {
+    // If the condition is true, add a
+    // specific bean to the Spring context.
+    registerBean(b1);
+} else {
+    // Otherwise, add another
+    // bean to the Spring context.
+    registerBean(b2);
+}
+```
+
+To keep using our parrots example, the scenario is as follows: The app reads a collection of parrots. Some of them are green; others are orange. You want the app to add to the Spring context only the parrots that are green
+
+**Using the registerBean() method you can write custom logic to add the desired instances to the Spring context.**
+
+The **registerBean()** has four parameters:
+
+1. **String beanName:** Use the first parameter beanName to define a name for the bean you add in the Spring context. If you don’t need to give a name to the bean you’re adding, you can use null as a value when you call the method.
+2. **Class<T> beanClass:** The second parameter is the class that defines the bean you add to the context. Say you want to add an instance of the class Parrot; the value you give to this parameter is Parrot.class.
+3. **Supplier<T> supplier:** The third parameter is an instance of Supplier. The implementation of this Supplier needs to return the value of the instance you add to the context. Remember, Supplier is a functional interface you find in the java.util.function package. The purpose of a supplier implementation is to return a value you define without taking parameters. 
