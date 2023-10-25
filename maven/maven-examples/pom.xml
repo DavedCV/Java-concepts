@@ -13,11 +13,13 @@
 
     <organization>
         <name>DavidCV</name>
+        <url>www.DavidCV.com</url>
     </organization>
 
     <developers>
         <developer>
             <name>David Castrillon</name>
+            <email>david@exmaple.com</email>
         </developer>
     </developers>
 

@@ -55,6 +55,7 @@
   - groupId
   - version
 - Specifies project information, plugins, goals, dependencies and profiles 
+- The Super POM is Maven's default POM. All POMs extend the Super POM unless explicitly set, meaning the configuration specified in the Super POM is inherited by the POMs you created for your projects.
 
 ## Repositories
 
@@ -82,6 +83,23 @@
 # Maven Technical Overview
 
 ![](./how-maven-works.png)
+
+# Maven Standard Directory Layout
+
+Having a common directory layout allows users familiar with one Maven project to immediately feel at home in another Maven project. The advantages are analogous to adopting a site-wide look-and-feel.
+
+Try to conform to this structure as much as possible. However, if you can't, these settings can be overridden via the project descriptor.
+
+![](/standardDirectoryLayout.png)
+
+At the top level, files descriptive of the project: a pom.xml file. In addition, there are textual documents meant for the user to be able to read immediately on receiving the source: README.txt, LICENSE.txt, etc.
+
+There are just two subdirectories of this structure: src and target. The only other directories that would be expected here are metadata like CVS, .git or .svn, and any subprojects in a multiproject build (each of which would be laid out as above).
+
+- The target directory is used to house all output of the build.
+- The src directory contains all of the source material for building the project, its site and so on. It contains a subdirectory for each type: main for the main build artifact, test for the unit test code and resources, site and so on.
+
+  Within artifact producing source directories (ie. main and test), there is one directory for the language java (under which the normal package hierarchy exists), and one for resources (the structure which is copied to the target classpath given the default resource definition).
 
 # Maven lifecyle and basic maven commands
 
@@ -122,6 +140,55 @@ Consists of 8 major steps or phases for compiling, testing, building and install
 - **mvn deploy** copies the packaged JAR/WAR file to the remote repository
 - **mvn arehctype:generate** this command is used to generate a new project from an archetype, which is a template for a project. This command is typically used to create new projects based on  a specific pattern or structure  
 - **mvn dependency:tree** this command is used to display the dependncies of the project in a tree format. This command is typically used to understand the dependencies of the prihect and troubleshoot any issues.
+
+# POM inheritance
+
+The configuration established in the parent POM ois carried over into the child POM. Under the child POM we can override configuration.
+
+Elements in the POM that are merged are the following:
+
+- dependencies
+- developers and contributors
+- plugin lists (including reports)
+- plugin executions with matching ids
+- plugin configuration
+- resources
+
+The Super POM is one example of project inheritance, however you can also introduce your own parent POMs by specifying the parent element in the POM.
+
+Generally, to specify a specific pom parent, we add a parent tag to the child pom as:
+
+```xml
+  <parent>
+    <groupId>com.mycompany.app</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1</version>
+  </parent>
+```
+
+Notice that we now have an added section, the parent section. This section allows us to specify which artifact is the parent of our POM. And we do so by specifying the fully qualified artifact name of the parent POM. With this setup, our module can now inherit some of the properties of our parent POM.
+
+# Introduction to Build Profiles
+
+Apache Maven goes to great lengths to ensure that builds are portable. Among other things, this means allowing build configuration inside the POM, avoiding all filesystem references (in inheritance, dependencies, and other places), and leaning much more heavily on the local repository to store the metadata needed to make this possible.
+
+However, sometimes portability is not entirely possible. Under certain conditions, plugins may need to be configured with local filesystem paths. Under other circumstances, a slightly different dependency set will be required, and the project's artifact name may need to be adjusted slightly. And at still other times, you may even need to include a whole plugin in the build lifecycle depending on the detected build environment.
+
+To address these circumstances, Maven supports build profiles. Profiles are specified using a subset of the elements available in the POM itself (plus one extra section), and are triggered in any of a variety of ways. They modify the POM at build time, and are meant to be used in complementary sets to give equivalent-but-different parameters for a set of target environments.
+
+A profile can be activated in several ways:
+
+- Explicitly
+- Implicitly
+  - Based on OS
+  - Based on system properties
+  - Based on presence of files
+
+# Generate a basic projetc fast
+
+```bash
+mvn archetype:generate
+```
 
 # Maven dependencies
 
