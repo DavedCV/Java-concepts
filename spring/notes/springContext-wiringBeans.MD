@@ -384,6 +384,8 @@ Depending on your implementation, you have the following cases:
 
 The next listing shows you a configuration class that defines two Parrot instances and uses injection through the method parameters.
 
+### Using parameter injection for more than one bean
+
 ```java
 @Configuration
 public class ProjectConfig {
@@ -437,6 +439,41 @@ public class Main {
 
 Observe that Spring linked the person bean to the parrot named Miki because the bean representing this parrot has the name parrot2.
 
+### Using the @Qualifier annotation
+
 In a real-world scenario, is best to avoid relying on the name of the parameter, which could be easily refactored and changed by mistake by another developer. To feel more comfortable, is better to choose a more visible approach to express the intention to inject a specific bean: using the @Qualifier annotation.
 
 The following listing provides an example using the @Qualifier annotation. Observe that instead of having a specific identifier of the parameter, now we specify the bean we want to inject using the value attribute of the @Qualifier annotation.
+
+```java
+@Configuration
+public class ProjectConfig {
+
+    @Bean
+    public Parrot parrot1() {
+        Parrot p = new Parrot();
+        p.setName("Koko");
+        return p;
+    }
+
+    @Bean
+    @Primary
+    public Parrot parrot2() {
+        Parrot p = new Parrot();
+        p.setName("Miki");
+        return p;
+    }
+
+    @Bean
+    //  Using the @Qualifier annotation,
+    //  you clearly mark your intention
+    //  to inject a specific bean from the
+    //  context.
+    public Person person(@Qualifier("parrot2") Parrot parrot) {
+        Person p = new Person();
+        p.setName("Ella");
+        p.setParrot(parrot);
+        return p;
+    }
+}
+```
