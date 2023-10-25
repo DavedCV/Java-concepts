@@ -545,3 +545,31 @@ As we discussed for the @Bean annotated method parameter, is better to not rely 
 This way, we minimize the chance that someone would refactor the name of the variable and thus affect how the app works.
 
 Using the @Qualifier annotation, we specify the name of the bean we want Spring to inject from the context, and we don’t rely on the identifier of the constructor’s parameter
+
+```java
+@Component
+public class Person {
+    private final Parrot parrot;
+
+    private String name = "Ella";
+
+    @Autowired
+    public Person(@Qualifier("parrot2") Parrot parrot) {
+        this.parrot = parrot;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Parrot getParrot() {
+        return parrot;
+    }
+}
+```
+
+The behavior of the app doesn’t change, and the output remains the same. This approach makes your code less subject to mistakes.
