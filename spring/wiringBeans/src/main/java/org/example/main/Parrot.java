@@ -1,11 +1,11 @@
 package org.example.main;
 
-public class Parrot {
-    private String name;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
 
-    public Parrot() {
-        System.out.println("Parrot created (this should be printed only 1)");
-    }
+@Component
+public class Parrot {
+    private String name = "Koko";
 
     public String getName() {
         return name;

@@ -16,7 +16,6 @@ public class Main {
         System.out.println("Person's name: " + person.getName());
         System.out.println("Parrot's name: " + parrot.getName());
 
-        // Prints the person’s parrot to prove that there’s not yet a relationship between the instances
         System.out.println("Person's parrot: " + person.getParrot());
     }
 }

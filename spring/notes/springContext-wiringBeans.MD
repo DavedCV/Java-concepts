@@ -6,7 +6,7 @@ In apps, we need to refer from one bean to another in a straightforward fashion�
 
 As you probably already know, often in any object-oriented programming language, an object needs to delegate specific responsibilities to others when implementing their behavior, so you need to know how to establish such relationships among objects when you use Spring as a framework as well.
 
-## 3.1 Implementing relationships among beans defined in the configuration file
+## 3.1 - Implementing relationships among beans defined in the configuration file
 
 In this section, you will learn to implement the relationship between two beans defined in the configuration class annotating methods with the @Bean annotation.
 You’ll often encounter this approach for establishing the relationships among beans using the Spring configuration.
@@ -195,3 +195,108 @@ DI is a technique involving the framework setting a value into a specific field 
 ![](/DIfigure.png)
 
 You’ll often use DI (and not only in Spring) because it’s a very comfortable way to manage object instances that are created and help us minimize the code we write when developing our apps.
+
+## 3.2 - Using the @Autowired annotation to inject beans
+
+You’ll often encounter this technique, which refers to an annotation named @Autowired, when you can change the class for which you define the bean (when this class is not part of a dependency).
+
+Using the @Autowired annotation, we mark an object’s property where we want Spring to inject a value from the context, and we mark this intention directly in the class that defines the object that needs the dependency. This approach makes it easier to see the relationship between the two objects than the alternatives we discussed.
+
+There are three ways we can use the @Autowired annotation:
+- Injecting the value in the field of the class, which you usually find in examples and proofs of concept
+- Injecting the value through the constructor parameters of the class approach that you’ll use most often in real-world scenarios
+- Injecting the value through the setter, which you’ll rarely use in production-ready code
+
+### Using @Autowired to inject the values through the class fields
+
+Even if this approach is very straightforward, it has its sins, which is why we avoid using it when writing production code.
+
+Let’s develop a project in which we annotate the parrot field of the Person class with the @Autowired annotation to tell Spring we want to inject a value there from its context.
+
+```java
+@Component
+public class Parrot {
+    private String name = "Koko";
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "Parrot: " + name;
+    }
+}
+```
+
+```java
+@Component
+public class Person {
+    private String name;
+
+    //  Annotating the field with @Autowired, we
+    //  instruct Spring to inject an appropriate
+    //  value from its context
+    @Autowired
+    private Parrot parrot = "Ella";
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Parrot getParrot() {
+        return parrot;
+    }
+
+    public void setParrot(Parrot parrot) {
+        this.parrot = parrot;
+    }
+}
+```
+
+![](/autowiredClassFields.png)
+
+We use the stereotype annotation as an alternative to creating the bean using the configuration class. When annotating a class with @Component, Spring knows it has to create an instance of that class and add it to its context.
+
+> In this case were used stereotype annotations to add the beans in the Spring context for this example. We could have defined the beans using @Bean, but most often, in real-world scenarios, you’ll encounter @Autowired used together with stereotype annotations.
+
+```java
+@Configuration
+@ComponentScan (basePackages = "org.example.main")
+public class ProjectConfig {
+}
+```
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        var context = new AnnotationConfigApplicationContext(ProjectConfig.class);
+
+        // Gets a reference to the Person bean from the Spring context
+        Person person = context.getBean(Person.class);
+
+        // Gets a reference to the Parrot bean from the Spring context
+        Parrot parrot = context.getBean(Parrot.class);
+
+        System.out.println("Person's name: " + person.getName());
+        System.out.println("Parrot's name: " + parrot.getName());
+
+        System.out.println("Person's parrot: " + person.getParrot());
+    }
+}
+```
+
+**Why is this approach not desired in production code?** It’s not totally wrong to use it, but you want to make sure you make your app maintainable and testable in produc- tion code. By injecting the value directly in the field:
+
+- You don’t have the option to make the field final, and this way, make sure no one can change its value after initialization.
+- It’s more difficult to manage the value yourself at initialization.
+
+### Using @Autowired to inject the values through the constructor
