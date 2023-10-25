@@ -184,7 +184,7 @@ A profile can be activated in several ways:
   - Based on system properties
   - Based on presence of files
 
-# Generate a basic projetc fast
+# Generate a basic project fast
 
 ```bash
 mvn archetype:generate
@@ -197,6 +197,12 @@ Maven simplifies the creation and management of dependencies by using a centrali
 To define a dependency you need to specify the group ID, artifact ID, and version of the dependency.
 
 ![](/dependency.png)
+
+The command to sync dependencies is:
+
+```bash
+mvn dependency:copy-dependencies
+```
 
 ## Resolve Dependencies
 
