@@ -5,9 +5,11 @@ import org.example.proxies.CommentNotificationProxy;
 import org.example.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+// We use @Service to define this object as a
+//component having the responsibility of service.
+@Service
 public class CommentService {
 
     // We define the two dependencies as attributes of the class.

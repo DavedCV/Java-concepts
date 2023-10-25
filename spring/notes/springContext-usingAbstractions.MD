@@ -459,3 +459,54 @@ public class CommentService {
 Spring injects the dependency you specified using @Qualifier when you run the app.
 
 ## Focusing on object responsibilities with stereotype annotations
+
+Thus far, when discussing stereotype annotations, we have only used @Component in our examples. But with real-world implementations, you’ll find out that developers sometimes use other annotations for the same purpose. In this section, I’ll show you how to use two more stereotype annotations: @Service and @Repository.
+
+In real-world projects, it’s a common practice to define the component’s purpose using the stereotype annotation explicitly. Using @Component is generic and gives you no detail about the responsibility of the object you’re implementing. But developers generally use objects with some known responsibilities. Two of the responsibilities we discussed are the **service** and the **repository**.
+
+The services are the objects with the responsibility of implementing the use cases, while repositories are the objects managing the data persistence. Because these responsibilities are so common in projects, and they are important in the class design, having a distinctive way of marking them helps the developer better understand the app design.
+
+Spring offers us the **@Service** annotation to mark a component that takes the responsibility of a service and the **@Repository** annotation to mark a component that implements a repository responsibility. All three (@Component, @Service, and @Repository) are stereotype annotations and instruct Spring to create and add an instance of the annotated class to its context.
+
+![](/images/stereotypeAnnotationsObjectResponsability.png)
+
+```java
+// We use @Service to define this object as a
+//component having the responsibility of service.
+@Service
+public class CommentService {
+
+    // We define the two dependencies as attributes of the class.
+    private final CommentRepository commentRepository;
+    private final CommentNotificationProxy commentNotificationProxy;
+
+    @Autowired
+    // For each parameter where we want to use a specific
+    //implementation, we annotate the parameter with @Qualifier.
+    public CommentService(CommentRepository commentRepository,
+                          @Qualifier("PUSH") CommentNotificationProxy commentNotificationProxy)
+    {
+        this.commentRepository = commentRepository;
+        this.commentNotificationProxy = commentNotificationProxy;
+    }
+
+    // We implement the use case that delegates the “store comment” and “send notification” responsibilities to the
+    // dependencies.
+    public void publishComment(Comment comment) {
+        commentRepository.storeComment(comment);
+        commentNotificationProxy.sendComment(comment);
+    }
+}
+```
+
+```java
+// We use @Repository to define this object as a
+//component with the responsibility of the repository.
+@Repository
+public class DBCommentRepository implements CommentRepository {
+    @Override
+    public void storeComment(Comment comment) {
+        System.out.println("Storing comment: " + comment.getText());
+    }
+}
+```
