@@ -18,8 +18,8 @@ So, for each of the two approaches (wiring and auto-wiring), we have two steps:
 1. Add the person and parrot beans to the Spring context.
 2. Establish a relationship between the person and the parrot.
 
-![](/beansRelationship.png)
-![](/beansRelationship2.png)
+![](/images/beansRelationship.png)
+![](/images/beansRelationship2.png)
 
 ```java
 public class Parrot {
@@ -142,14 +142,14 @@ public class ProjectConfig {
 }
 ```
 
-![](/wiringBeanMethodCalls.png)
+![](/images/wiringBeanMethodCalls.png)
 
 Doesn’t this mean that we create two instances of Parrot—one instance Spring creates and adds into its context and another one when the person() method makes the
 direct call to the parrot() method? **No, we actually have only one parrot instance in this application overall.**
 
 It might look strange at first, but Spring is smart enough to understand that by calling the parrot() method, you want to refer to the parrot bean in its context. When we use the @Bean annotation to define beans into the Spring context, Spring controls how the methods are called and can apply logic above the method call.
 
-![](/wiringBeansSpringLogic.png)
+![](/images/wiringBeansSpringLogic.png)
 
 It’s actually quite easy to test this behavior. Just add a no-args constructor to the Parrot class and print a message into the console from it. How many times will the message be printed in the console? If the behavior is correct, you’ll see the message only once.
 
@@ -192,7 +192,7 @@ public class ProjectConfig {
 
 DI is a technique involving the framework setting a value into a specific field or parameter. In our case, Spring sets a particular value into the parameter of the person() method when calling it and resolves a dependency of this method. DI is an application of the IoC principle, and IoC implies that the framework controls the application at execution.
 
-![](/DIfigure.png)
+![](/images/DIfigure.png)
 
 You’ll often use DI (and not only in Spring) because it’s a very comfortable way to manage object instances that are created and help us minimize the code we write when developing our apps.
 
@@ -236,13 +236,13 @@ public class Parrot {
 ```java
 @Component
 public class Person {
-    private String name;
+    private String name = "Ella";
 
     //  Annotating the field with @Autowired, we
     //  instruct Spring to inject an appropriate
     //  value from its context
     @Autowired
-    private Parrot parrot = "Ella";
+    private Parrot parrot;
 
     public String getName() {
         return name;
@@ -262,7 +262,7 @@ public class Person {
 }
 ```
 
-![](/autowiredClassFields.png)
+![](/images/autowiredClassFields.png)
 
 We use the stereotype annotation as an alternative to creating the bean using the configuration class. When annotating a class with @Component, Spring knows it has to create an instance of that class and add it to its context.
 
@@ -366,7 +366,7 @@ It’s comfortable to let Spring build and set the dependencies to the objects o
 
 A circular dependency is a situation in which, to create a bean (let’s name it Bean A), Spring needs to inject another bean that doesn’t exist yet (Bean B). But Bean B also requests a dependency to Bean A. So, to create Bean B, Spring needs first to have Bean A. Spring is now in a deadlock. It cannot create Bean A because it needs Bean B, and it cannot create Bean B because it needs Bean A.
 
-![](/circularDependencies.png)
+![](/images/circularDependencies.png)
 
 A circular dependency is easy to avoid. You just need to make sure you don’t define objects whose creation depends on the other. Having dependencies from one object to another like this is a bad design of classes. In such a case, you need to rewrite your code.
 

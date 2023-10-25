@@ -174,7 +174,7 @@ One of the things you can do with a configuration class is add beans to the Spri
 
 We’ve implemented a configuration class in which we tell Spring the object instance that needs to become a bean. Now we need to make sure Spring uses this configuration class when initializing its context
 
-![](./addingBeanToContext.png)
+![](/images/addingBeanToContext.png)
 
 configuration class:
 ```java
@@ -394,7 +394,7 @@ Very similarly, but less encountered in real-world apps, you can use an annotati
 
 In real-world scenarios you’ll use stereotype annotations as much as possible (because this approach implies writing less code), and you’ll only use the @Bean when you can’t add the bean otherwise (e.g., you create the bean for a class that is part of a library so you cannot modify that class to add the stereotype annotation).
 
-![](./comparisonAddBeans.png)
+![](/images/comparisonAddBeans.png)
 
 ### Programmatically adding beans to the Spring context
 
@@ -466,6 +466,6 @@ public class Main {
 }
 ```
 
-![](/registerBeanMethod.png)
+![](/images/registerBeanMethod.png)
 
 Use one or more bean configurator instances as the last parameters to set different characteristics of the beans you add.

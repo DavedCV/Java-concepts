@@ -301,3 +301,98 @@ public class Main {
 It’s a small example, and it might not look like Spring improves a lot the experience, but look again. By using the DI feature, we don’t create the instance of the CommentService object and its dependencies ourselves, and we don’t need to explicitly make the relationship between them.
 
 In a real-world scenario, where you have more than three classes, letting Spring manage the objects and dependencies among them really makes a difference.
+
+In this case we use dependency injection through stereotype annotations, but we can wire the beans using the differente techniques that spring provides.
+
+use field dependency injection with @Autowired:
+
+```java
+@Component
+public class CommentService {
+
+    // We define the two dependencies as attributes of the class.
+    @Autowired
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private CommentNotificationProxy commentNotificationProxy;
+
+    // We implement the use case that delegates the “store comment” and “send notification” responsibilities to the
+    // dependencies.
+    public void publishComment(Comment comment) {
+        commentRepository.storeComment(comment);
+        commentNotificationProxy.sendComment(comment);
+    }
+}
+```
+
+use auto-wiring through the parameters of the @Bean annotated methods:
+
+```java
+@Configuration
+public class ProjectConfiguration {
+    @Bean
+    public CommentRepository commentRepository() {
+      return new DBCommentRepository();
+    }
+
+    @Bean
+    public CommentNotificationProxy commentNotificationProxy() {
+      return new EmailCommentNotificationProxy();
+    }
+
+    @Bean
+    public CommentService commentService(
+      CommentRepository commentRepository, 
+      CommentNotificationProxy commentNotificationProxy) {
+        
+        return new CommentService(commentRepository,commentNotificationProxy);
+    }
+}
+```
+
+### Choosing what to auto-wire from multiple implementations of an abstraction
+
+Thus far, we have focused on Spring’s behavior when using DI with abstractions. But we used an example in which we made sure to add only one instance for each kind of abstraction we requested for injection.
+
+Let’s go one step further and discuss what happens if the Spring context contains more instances that match a requested abstraction. This scenario can happen in real- world projects, and you need to know how to handle these cases to make your app work as expected.
+
+Suppose we have two beans created with two different classes that implement the CommentNotificationProxy interface. If more than one bean of the same type exists in the Spring context, you need to tell Spring which of these beans to inject.
+
+- Using the @Primary annotation to mark one of the beans for implementation as the default
+- Using the @Qualifier annotation to name a bean and then refer to it by its name for DI
+
+Let’s add a new class, CommentPushNotificationProxy (which implements the CommentNotificationProxy interface), to our application and test the approaches one by one, as shown in the following listing.
+
+```java
+@Component
+public class CommentPushNotificationProxy implements CommentNotificationProxy{
+    @Override
+    public void sendComment(Comment comment) {
+        System.out.println("Sending push notification for comment: " + comment.getText());
+    }
+}
+```
+
+If you run this application as-is, you’ll get an exception because Spring doesn’t know which of the two beans in its context to choose for injection.
+
+#### MARKING AN IMPLEMENTATION AS DEFAULT FOR INJECTION WITH @PRIMARY
+
+The first solution is using @Primary. The only thing you need to do is add @Primary near the @Component annotation to mark the implementation provided by this class as the default for implementation, as shown in the following listing.
+
+```java
+@Component
+@Primary
+public class CommentPushNotificationProxy implements CommentNotificationProxy{
+    @Override
+    public void sendComment(Comment comment) {
+        System.out.println("Sending push notification for comment: " + comment.getText());
+    }
+}
+```
+
+![](/images/autoWireAbstractionImplementationPrimary.png)
+
+#### NAMING IMPLEMENTATION FOR DEPENDENCY INJECTION WITH @QUALIFIER
+
+Sometimes, in production apps, you need to define more implementations of the same interface, and different objects use these implementations. Imagine we need to have two implementations for comment notification: by email or by push notification (figure 4.11). These are still implementations of the same interface, but they depend on different objects in the app.
