@@ -477,3 +477,71 @@ public class ProjectConfig {
     }
 }
 ```
+
+### Using parameter injection for more than one bean with @Autowire
+
+A similar situation can also happen when using the @Autowired annotation.
+
+In this project, we define two beans of type Parrot (using the @Bean annotation) and an instance of Person (using stereotype annotations). We’ll configure Spring to inject one of the two parrot beans in bean of type Person.
+
+```java
+public class Parrot {
+  private String name;
+  // Omitted getters, setters, and toString()
+}
+```
+
+We define a bean of type Person using the @Component stereotype annotation. Observe the identifier we gave to the parameter of the constructor in the next code snippet. The reason we gave the identifier “parrot2” is this is the name we’ll also configure for the bean in the context we want Spring to inject into that parameter:
+
+```java
+@Component
+public class Person {
+    private final Parrot parrot;
+
+    private String name = "Ella";
+
+    @Autowired
+    public Person(Parrot parrot2) {
+        this.parrot = parrot2;
+    }
+
+    // getters and setters
+}
+```
+
+I define two beans of type Parrot using the @Bean annotation in the configuration class. Don’t forget we still have to add @ComponentScan to tell Spring where to find the classes annotated with stereotype annotations.
+
+```java
+@Configuration
+@ComponentScan(basePackages = "org.example.main")
+public class ProjectConfig {
+
+    @Bean
+    public Parrot parrot1() {
+        Parrot p = new Parrot();
+        p.setName("Koko");
+        return p;
+    }
+
+    @Bean
+    @Primary
+    //  With the current setup, the bean named
+    //  parrot2 is the one that Spring injects into
+    //  the Person bean.
+    public Parrot parrot2() {
+        Parrot p = new Parrot();
+        p.setName("Miki");
+        return p;
+    }
+}
+```
+
+What happens if you run a main method as the one presented in the next code snippet? Our person owns which parrot? Because the name of the constructor’s parameter matches one of the bean’s names in the Spring context (parrot2), Spring injects that bean.
+
+### Using the @Qualifier annotation with @Autowire
+
+As we discussed for the @Bean annotated method parameter, is better to not rely on the name of the variable. Instead use the @Qualifier annotation to express the intention clearly: inject a specific bean from the context.
+
+This way, we minimize the chance that someone would refactor the name of the variable and thus affect how the app works.
+
+Using the @Qualifier annotation, we specify the name of the bean we want Spring to inject from the context, and we don’t rely on the identifier of the constructor’s parameter
