@@ -6,6 +6,9 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
+/*
+* Run the program and then  connect via telnet to the server (localhost:8189)
+* */
 public class EchoServer {
     public static void main(String[] args) throws IOException {
         // establish server socket

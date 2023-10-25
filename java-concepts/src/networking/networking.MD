@@ -39,6 +39,8 @@ one or the other closes the connection.
 
 ### Connecting to a Server with Java
 
+`SocketTest.java`
+
 The key statements of this simple program are these:
 
 ```java
@@ -313,3 +315,43 @@ Of course, this protocol is only useful for one-shot services such as HTTP where
 the client connects, issues a request, catches the response, and then disconnects.
 
 ## Interruptible Sockets
+
+When you connect to a socket, the current thread blocks until the connection has
+been established or a timeout has elapsed. Similarly, when you read or write data
+through a socket, the current thread blocks until the operation is successful or
+has timed out.
+
+In interactive applications, you would like to give users an option to simply
+cancel a socket connection that does not appear to produce results. However, if
+a thread blocks on an unresponsive socket, you cannot unblock it by calling
+interrupt.
+
+To interrupt a socket operation, use a SocketChannel, a feature of the java.nio package.
+Open the SocketChannel like this:
+
+```java
+SocketChannel channel = SocketChannel.open(new InetSocketAddress(host, port));
+```
+
+A channel does not have associated streams. Instead, it has read and write methods
+that make use of Buffer objects. These methods are declared in the interfaces ReadableByteChannel 
+and WritableByteChannel.
+
+If you don’t want to deal with buffers, you can use the Scanner class to read from
+a SocketChannel because Scanner has a constructor with a ReadableByteChannel parameter:
+
+```java
+Scanner in = new Scanner(channel, "UTF-8");
+```
+
+To turn a channel into an output stream, use the static Channels.newOutputStream method.
+
+```java
+OutputStream outStream = Channels.newOutputStream(channel);
+```
+
+Whenever a thread is interrupted during an open, read,
+or write operation, the operation does not block, but is terminated with an
+exception.
+
+## Getting Web Data
