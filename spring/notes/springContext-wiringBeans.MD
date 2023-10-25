@@ -300,3 +300,43 @@ public class Main {
 - It’s more difficult to manage the value yourself at initialization.
 
 ### Using @Autowired to inject the values through the constructor
+
+The second option you have for injecting values into the object’s attributes when Spring creates a bean is using the class’s constructor defining the instance.
+
+This approach is the one used most often in production code. The most recommended.
+
+It enables you to define the fields as final, ensuring no one can change their value after Spring initializes them. The possibility to set the values when calling the constructor also helps you when writing specific unit tests where you don’t want to rely on Spring making the field injection for you.
+
+You only need to change the Person class, as presented in the following listing. You need to define a constructor for the class and annotate it with @Autowired. Now we can also make the parrot field final.
+
+```java
+@Component
+public class Person {
+    private final Parrot parrot;
+
+    // We can now make the field final to ensure its
+    // value cannot be changed after initialization.
+    private String name = "Ella";
+
+    // We use the @Autowired annotation
+    // over the constructor.
+    @Autowired
+    public Person(Parrot parrot) {
+        this.parrot = parrot;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Parrot getParrot() {
+        return parrot;
+    }
+}
+```
+
+> Starting with Spring version 4.3, when you only have one constructor in the class, you can omit writing the @Autowired annotation.

@@ -5,13 +5,18 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class Person {
+    private final Parrot parrot;
+
+    // We can now make the field final to ensure its
+    // value cannot be changed after initialization.
     private String name = "Ella";
 
-    //  Annotating the field with @Autowired, we
-    //  instruct Spring to inject an appropriate
-    //  value from its context
+    // We use the @Autowired annotation
+    // over the constructor.
     @Autowired
-    private Parrot parrot;
+    public Person(Parrot parrot) {
+        this.parrot = parrot;
+    }
 
     public String getName() {
         return name;
@@ -23,9 +28,5 @@ public class Person {
 
     public Parrot getParrot() {
         return parrot;
-    }
-
-    public void setParrot(Parrot parrot) {
-        this.parrot = parrot;
     }
 }
