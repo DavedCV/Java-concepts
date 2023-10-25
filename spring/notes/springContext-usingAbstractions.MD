@@ -183,3 +183,121 @@ public class Main {
     }
 }
 ```
+
+## Using dependency injection with abstractions
+
+In this section, we apply the Spring framework over the class design we implemented. Using this example, we can discuss how Spring manages dependency injection when using abstractions. This subject is essential because in most projects, you’ll implement dependencies between objects using abstractions.
+
+We discussed dependency injection, and we used concrete classes to declare the variables where we wanted Spring to set the values of beans from its context. But as you’ll learn in this chapter, Spring also understands abstractions.
+
+We’ll start by adding the Spring dependency to our project, and then we’ll decide which of the objects of this application need to be managed by Spring. You’ll learn to decide which objects you need to make Spring aware of.
+
+We’ll focus on discussing various situations that can appear when using dependency injection with abstractions.
+
+### Deciding which objects should be part of the Spring Context
+
+Based on our discussion, you might think you need to add all the app objects in the Spring context, but this is not the case.
+
+Remember, you learned that the main reason to add an object to the Spring context is to allow Spring to control it and further augment it with functionalities the framework provides. So the decision should be easy and based on the question, “Does this object need to be managed by the framework?”
+
+It’s not difficult to answer this question for our scenario, as the only Spring feature we use is the DI. In our case, we need to add the object to the Spring context if it either has a dependency we need to inject from the context or if it’s a dependency itself.
+
+Looking at our implementation, you’ll observe that the only object that doesn’t have a dependency and is also not a dependency itself is Comment. The other objects in our class design are as follows:
+- CommentService—Has two dependencies, the CommentRepository and the CommentNotificationProxy
+- DBCommentRepository—Implements the CommentRepository interface and is a dependency of the CommentService
+- EmailCommentNotificationProxy—Implements the CommentNotificationProxy interface and is a dependency of the CommentService
+
+Adding objects to the Spring context without needing the framework to manage them adds unnecessary complexity to your app, making the app both more challenging to maintain and less performant. When you add an object to the Spring context, you allow the framework to manage it with some specific functionality the framework provides. If you add the object to be managed by Spring without getting any benefit from the framework, you just over-engineer your implementation.
+
+We discussed that using stereotype annotations (@Component) is the most comfortable way to add beans to the Spring context when the classes belong to your project, and you can change them. We’ll use this approach here as well.
+
+We use stereotype annotations for the classes that Spring needs to create instances and add these instances to its context. It doesn’t make sense to add stereotype annotations on interfaces or abstract classes because these cannot be instantiated. Syntactically, you can do this, but it is not useful.
+
+Let’s change the code and add the @Component annotation to these classes.
+
+In the following listing, you find the change for the DBCommentRepository class:
+
+```java
+// Marking the class with @Component instructs Spring to
+// instantiate the class and add an instance as a bean in
+// its context.
+@Component
+public class DBCommentRepository implements CommentRepository {
+    @Override
+    public void storeComment(Comment comment) {
+        System.out.println("Storing comment: " + comment.getText());
+    }
+}
+```
+
+In the next listing, you find the changes for the EmailCommentNotificationProxy class.
+
+```java
+@Component
+public class EmailCommentNotificationProxy implements CommentNotificationProxy {
+    @Override
+    public void sendComment(Comment comment) {
+        System.out.println("Sending notification for comment: " + comment.getText());
+    }
+}
+```
+
+In the next listing, we change the CommentService class as well by annotating it with @Component. The CommentService class declares the dependencies to the other two components through the interfaces CommentRepository and CommentNotificationProxy. Spring sees the attributes are defined with interface types and is smart enough to search in its context for beans created with classes that implement these interfaces.
+
+```java
+
+@Component
+public class CommentService {
+
+    // We define the two dependencies as attributes of the class.
+    private final CommentRepository commentRepository;
+    private final CommentNotificationProxy commentNotificationProxy;
+
+    @Autowired
+    // Spring uses this constructor to create the bean and injects
+    // references from its context in the parameters when creating the
+    // instance.
+    public CommentService(CommentRepository commentRepository, CommentNotificationProxy commentNotificationProxy) {
+        this.commentRepository = commentRepository;
+        this.commentNotificationProxy = commentNotificationProxy;
+    }
+
+    // We implement the use case that delegates the “store comment” and “send notification” responsibilities to the
+    // dependencies.
+    public void publishComment(Comment comment) {
+        commentRepository.storeComment(comment);
+        commentNotificationProxy.sendComment(comment);
+    }
+}
+```
+
+We only need to tell Spring where to find the classes annotated with stereotype annotations and test the app. The next listing presents the project’s configuration class where we use the @ComponentScan annotation to tell Spring where to find the classes annotated with @Component.
+
+```java
+@Configuration
+@ComponentScan(basePackages = {"org.example.proxies", "org.example.repositories", "org.example.services"})
+public class ProjectConfiguration {
+}
+```
+
+To test our setup, let’s create a new main method, as presented in the following listing. We’ll spin the Spring context, grab the bean of type CommentService out of it, and call the publishComment(Comment comment) method.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+
+        var context = new AnnotationConfigApplicationContext(ProjectConfiguration.class);
+
+        Comment comment = new Comment();
+        comment.setAuthor("David");
+        comment.setText("Demo comment");
+
+        CommentService commentService = context.getBean(CommentService.class);
+        commentService.publishComment(comment);
+    }
+}
+```
+
+It’s a small example, and it might not look like Spring improves a lot the experience, but look again. By using the DI feature, we don’t create the instance of the CommentService object and its dependencies ourselves, and we don’t need to explicitly make the relationship between them.
+
+In a real-world scenario, where you have more than three classes, letting Spring manage the objects and dependencies among them really makes a difference.
