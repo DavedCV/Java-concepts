@@ -3,20 +3,10 @@ package org.example.main;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component
 public class Person {
-    private final Parrot parrot;
+    private Parrot parrot;
 
-    // We can now make the field final to ensure its
-    // value cannot be changed after initialization.
-    private String name = "Ella";
-
-    // We use the @Autowired annotation
-    // over the constructor.
-    @Autowired
-    public Person(Parrot parrot) {
-        this.parrot = parrot;
-    }
+    private String name;
 
     public String getName() {
         return name;
@@ -28,5 +18,9 @@ public class Person {
 
     public Parrot getParrot() {
         return parrot;
+    }
+
+    public void setParrot(Parrot parrot) {
+        this.parrot = parrot;
     }
 }

@@ -340,3 +340,103 @@ public class Person {
 ```
 
 > Starting with Spring version 4.3, when you only have one constructor in the class, you can omit writing the @Autowired annotation.
+
+### Using dependency injection through the setter
+
+You won’t often find developers applying the approach of using the setter for dependency injection. This approach has more disadvantages than advantages: it’s more challenging to read, it doesn’t allow you to make the field final, and it doesn’t help you in making the testing easier.
+
+```java
+@Component
+public class Person {
+  private String name = "Ella";
+  private Parrot parrot;
+  
+  // Omitted getters and setters
+
+  @Autowired
+  public void setParrot(Parrot parrot) {
+    this.parrot = parrot;
+  }
+}
+```
+
+## 3.3 - Dealing with circular dependencies
+
+It’s comfortable to let Spring build and set the dependencies to the objects of your application. Letting Spring do this job for you saves you from writing a bunch of lines of code and makes the app easier to read and understand. But Spring can also get confused in some cases. A scenario often encountered in practice is generating a circular dependency by mistake.
+
+A circular dependency is a situation in which, to create a bean (let’s name it Bean A), Spring needs to inject another bean that doesn’t exist yet (Bean B). But Bean B also requests a dependency to Bean A. So, to create Bean B, Spring needs first to have Bean A. Spring is now in a deadlock. It cannot create Bean A because it needs Bean B, and it cannot create Bean B because it needs Bean A.
+
+![](/circularDependencies.png)
+
+A circular dependency is easy to avoid. You just need to make sure you don’t define objects whose creation depends on the other. Having dependencies from one object to another like this is a bad design of classes. In such a case, you need to rewrite your code.
+
+## 3.4 - Choosing from multiple beans in the Spring context
+
+In this section, we discuss the scenario in which Spring needs to inject a value into a parameter or class field but has multiple beans of the same type to choose from. Say you have three Parrot beans in the Spring context. You configure Spring to inject a value of type Parrot into a parameter. How will Spring behave? Which of the beans of the same type would the framework choose to inject in such} a scenario?
+
+Depending on your implementation, you have the following cases:
+
+1. The identifier of the parameter matches the name of one of the beans from the context (which, remember, is the same as the name of the method annotated with @Bean that returns its value). In this case, Spring will choose the bean for which the name is the same as the parameter
+2. The identifier of the parameter doesn’t match any of the bean names from the context. Then you have the following options:
+  - You marked one of the beans as primary. In this case, Spring will select the primary bean for injection.
+  - You can explicitly select a specific bean using the @Qualifier annotation.
+  - If none of the beans is primary and you don’t use @Qualifier, the app will fail with an exception, complaining that the context contains more beans of the same type and Spring doesn’t know which one to choose.
+
+The next listing shows you a configuration class that defines two Parrot instances and uses injection through the method parameters.
+
+```java
+@Configuration
+public class ProjectConfig {
+
+    @Bean
+    public Parrot parrot1() {
+        Parrot p = new Parrot();
+        p.setName("Koko");
+        return p;
+    }
+
+    @Bean
+    @Primary
+    public Parrot parrot2() {
+        Parrot p = new Parrot();
+        p.setName("Miki");
+        return p;
+    }
+
+    @Bean
+    // The name of the parameter
+    //matches the name of the bean
+    //representing parrot Miki.
+    public Person person(Parrot parrot2) {
+        Person p = new Person();
+        p.setName("Ella");
+        p.setParrot(parrot2);
+        return p;
+    }
+}
+```
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        var context = new AnnotationConfigApplicationContext(ProjectConfig.class);
+
+        // Gets a reference to the Person bean from the Spring context
+        Person person = context.getBean(Person.class);
+
+        // Gets a reference to the Parrot bean from the Spring context
+        Parrot parrot = context.getBean(Parrot.class);
+
+        System.out.println("Person's name: " + person.getName());
+        System.out.println("Parrot's name: " + parrot.getName());
+
+        System.out.println("Person's parrot: " + person.getParrot());
+    }
+}
+```
+
+Observe that Spring linked the person bean to the parrot named Miki because the bean representing this parrot has the name parrot2.
+
+In a real-world scenario, is best to avoid relying on the name of the parameter, which could be easily refactored and changed by mistake by another developer. To feel more comfortable, is better to choose a more visible approach to express the intention to inject a specific bean: using the @Qualifier annotation.
+
+The following listing provides an example using the @Qualifier annotation. Observe that instead of having a specific identifier of the parameter, now we specify the bean we want to inject using the value attribute of the @Qualifier annotation.
