@@ -4,6 +4,7 @@ import org.example.models.Comment;
 import org.example.proxies.CommentNotificationProxy;
 import org.example.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,10 +15,11 @@ public class CommentService {
     private final CommentNotificationProxy commentNotificationProxy;
 
     @Autowired
-    // Spring uses this constructor to create the bean and injects
-    // references from its context in the parameters when creating the
-    // instance.
-    public CommentService(CommentRepository commentRepository, CommentNotificationProxy commentNotificationProxy) {
+    // For each parameter where we want to use a specific
+    //implementation, we annotate the parameter with @Qualifier.
+    public CommentService(CommentRepository commentRepository,
+                          @Qualifier("PUSH") CommentNotificationProxy commentNotificationProxy)
+    {
         this.commentRepository = commentRepository;
         this.commentNotificationProxy = commentNotificationProxy;
     }

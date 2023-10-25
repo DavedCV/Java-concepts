@@ -395,4 +395,67 @@ public class CommentPushNotificationProxy implements CommentNotificationProxy{
 
 #### NAMING IMPLEMENTATION FOR DEPENDENCY INJECTION WITH @QUALIFIER
 
-Sometimes, in production apps, you need to define more implementations of the same interface, and different objects use these implementations. Imagine we need to have two implementations for comment notification: by email or by push notification (figure 4.11). These are still implementations of the same interface, but they depend on different objects in the app.
+Sometimes, in production apps, you need to define more implementations of the same interface, and different objects use these implementations. Imagine we need to have two implementations for comment notification: by email or by push notification. These are still implementations of the same interface, but they depend on different objects in the app.
+
+The following code snippets show you how to use the @Qualifier annotation to name specific implementations.
+
+![](/images/autoWireAbstractionImplementationQualifier.png)
+
+```java
+@Component
+// Using @Qualifier, we name this implementation “PUSH.”
+@Qualifier("PUSH")
+public class CommentPushNotificationProxy implements CommentNotificationProxy{
+    @Override
+    public void sendComment(Comment comment) {
+        System.out.println("Sending push notification for comment: " + comment.getText());
+    }
+}
+```
+
+```java
+@Component
+// Using @Qualifier, we name this implementation “EMAIL.
+@Qualifier("EMAIL")
+public class EmailCommentNotificationProxy implements CommentNotificationProxy {
+    @Override
+    public void sendComment(Comment comment) {
+        System.out.println("Sending notification for comment: " + comment.getText());
+    }
+}
+```
+
+When you want Spring to inject one of these, you just need to specify the implementation’s name using the @Qualifier annotation again.
+
+In the next listing, you find out how to inject a specific implementation as a dependency of the CommentService object.
+
+```java
+@Component
+public class CommentService {
+
+    // We define the two dependencies as attributes of the class.
+    private final CommentRepository commentRepository;
+    private final CommentNotificationProxy commentNotificationProxy;
+
+    @Autowired
+    // For each parameter where we want to use a specific
+    //implementation, we annotate the parameter with @Qualifier.
+    public CommentService(CommentRepository commentRepository,
+                          @Qualifier("PUSH") CommentNotificationProxy commentNotificationProxy)
+    {
+        this.commentRepository = commentRepository;
+        this.commentNotificationProxy = commentNotificationProxy;
+    }
+
+    // We implement the use case that delegates the “store comment” and “send notification” responsibilities to the
+    // dependencies.
+    public void publishComment(Comment comment) {
+        commentRepository.storeComment(comment);
+        commentNotificationProxy.sendComment(comment);
+    }
+}
+```
+
+Spring injects the dependency you specified using @Qualifier when you run the app.
+
+## Focusing on object responsibilities with stereotype annotations
