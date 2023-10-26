@@ -274,3 +274,66 @@ public class Main {
     }
 }
 ```
+
+#### DECLARING PROTOTYPE-SCOPED BEANS USING STEREOTYPE ANNOTATIONS
+
+We’ll define a CommentRepository prototype bean, and we inject the bean using @Autowired in two other service beans. We will observe that each service bean has a reference to a different instance of CommentRepository.
+
+```java
+@Repository
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class CommentRepository {
+}
+```
+
+```java
+@Service
+public class CommentService {
+
+    @Autowired
+    private CommentRepository commentRepository;
+
+    public CommentRepository getCommentRepository() {
+        return commentRepository;
+    }
+}
+
+@Service
+public class UserService {
+
+    @Autowired
+    private CommentRepository commentRepository;
+
+    public CommentRepository getCommentRepository() {
+        return commentRepository;
+    }
+}
+```
+
+```java
+@Configuration
+@ComponentScan(basePackages = {"org.example.repositories", "org.example.services"})
+public class ProjectConfiguration {
+}
+```
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        var context = new AnnotationConfigApplicationContext(ProjectConfiguration.class);
+
+        var s1 = context.getBean(CommentService.class);
+        var s2 = context.getBean(UserService.class);
+
+        //  Compares the references for the injected
+        //  CommentRepository instances. Because
+        //  CommentRepository is a prototype bean,
+        //  the result of the comparison is always false.
+        boolean b1 = s1.getCommentRepository() == s2.getCommentRepository();
+
+        System.out.println(b1);
+    }
+}
+```
+
+### Prototype beans in real-world scenarios
