@@ -337,3 +337,14 @@ public class Main {
 ```
 
 ### Prototype beans in real-world scenarios
+
+we’ll consider the discussed characteristics and analyze which scenarios prototype beans are good for and where should you avoid them (by using singleton beans).
+
+You won’t find prototype beans as often as you’ll find singleton beans. But there is a good pattern you can use to decide if a bean should be prototype. Remember that singleton beans are not quite good friends with mutating objects.
+
+Generally avoid using them, and mutable instances in general.
+
+### Singleton vs Prototype Bean Scopes
+
+![](/images/SingletonVsPrototype.png)
+
