@@ -237,3 +237,40 @@ As you can see, we need to use a new annotation named @Scope to change the bean�
 With prototype beans, we no longer have concurrency problems because each thread that requests the bean gets a different instance, so defining mutable prototype beans is not a problem.
 
 #### DECLARING PROTOTYPE-SCOPED BEANS WITH @BEAN
+
+```java
+public class CommentService {
+}
+```
+
+```java
+@Configuration
+public class ProjectConfiguration {
+
+    @Bean
+    // Makes this bean prototype-scoped
+    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
+    public CommentService commentService() {
+        return new CommentService();
+    }
+}
+```
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        var c = new AnnotationConfigApplicationContext(ProjectConfiguration.class);
+
+        // The two variables cs1 and cs2 contain
+        //  references to different instances.
+        var cs1 = c.getBean("commentService", CommentService.class);
+        var cs2 = c.getBean("commentService", CommentService.class);
+
+        boolean b = cs1 == cs2;
+
+        // This line always prints
+        //“false” in the console.
+        System.out.println(b);
+    }
+}
+```
