@@ -355,3 +355,152 @@ or write operation, the operation does not block, but is terminated with an
 exception.
 
 ## Getting Web Data
+
+### URLs and URIs
+
+The **URL** and **URLConnection** classes encapsulate much of the complexity of retrieving
+information from a remote site. You can construct a URL object from a string:
+
+```java
+URL url = new URL(urlString);
+```
+
+If you simply want to fetch the contents of the resource, use the openStream method
+of the URL class. This method yields an InputStream object. Use it in the usual way—for
+example, to construct a Scanner:
+
+```java
+InputStream inStream = url.openStream();
+Scanner in = new Scanner(inStream, "UTF-8");
+```
+
+The java.net package makes a useful distinction between URLs (uniform resource
+locators) and URIs (uniform resource identifiers).
+
+A URI is a purely syntactical construct that contains the various parts of the string
+specifying a web resource. A URL is a special kind of URI, namely, one with
+sufficient information to locate a resource.
+
+In the Java library, the URI class has no methods for accessing the resource that
+the identifier specifies—its sole purpose is parsing. In contrast, the URL class can
+open a stream to the resource. For that reason, the URL class only works with
+schemes that the Java library knows how to handle, such as http:, https:, ftp:, the
+local file system (file:), and JAR files (jar:).
+
+To see why parsing is not trivial, consider how complex URIs can be. For example,
+
+```
+http:/google.com?q=Beach+Chalet
+ftp://username:password@ftp.yourserver.com/pub/file.txt
+```
+
+The URI specification gives the rules for the makeup of these identifiers. A URI
+has the syntax
+
+```
+[scheme:]schemeSpecificPart[#fragment]
+```
+
+Here, the [. . .] denotes an optional part, and the : and # are included literally
+in the identifier.
+
+If the scheme: part is present, the URI is called absolute. Otherwise, it is called relative.
+
+An absolute URI is opaque if the schemeSpecificPart does not begin with a / such as
+  
+```
+mailto:cay@horstmann.com
+```
+
+All absolute nonopaque URIs and all relative URIs are hierarchical. Examples are
+
+```
+http://horstmann.com/index.html
+../../java/net/Socket.html#Socket()
+```
+
+The schemeSpecificPart of a hierarchical URI has the structure:
+
+```
+[//authority][path][?query]
+```
+
+For server-based URIs, the authority part has the form
+
+```
+[user-info@]host[:port]
+```
+
+The port must be an integer.
+
+One of the purposes of the URI class is to parse an identifier and break it up into
+its components. You can retrieve them with the methods
+
+```java
+its components. You can retrieve them with the methods
+getScheme
+getSchemeSpecificPart
+getAuthority
+getUserInfo
+getHost
+getPort
+getPath
+getQuery
+getFragment
+```
+
+The other purpose of the URI class is the handling of absolute and relative
+identifiers. Resolving a relative URL and relativization.
+
+### Using a URLConnection to Retrieve Information
+
+If you want additional information about a web resource, you should use the
+URLConnection class, which gives you much more control than the basic URL class. 
+
+When working with a URLConnection object, you must carefully schedule your steps.
+
+1. Call the openConnection method of the URL class to obtain the URLConnection object:
+
+```java
+URLConnection connection = url.openConnection();
+```
+
+2. Set any request properties, using the methods:
+
+```java
+setDoInput
+setDoOutput
+setIfModifiedSince
+setUseCaches
+setAllowUserInteraction
+setRequestProperty
+setConnectTimeout
+setReadTimeout
+```
+
+3. Connect to the remote resource by calling the connect method.
+
+```java
+connection.connect();
+```
+
+Besides making a socket connection to the server, this method also queries
+the server for header information.
+
+4. After connecting to the server, you can query the header information. Two
+   methods, getHeaderFieldKey and getHeaderField, enumerate all fields of the header.
+   The method getHeaderFields gets a standard Map object containing the header
+   fields. For your convenience, the following methods query standard fields:
+
+```java
+getContentType
+getContentLength
+getContentEncoding
+getDate
+getExpiration
+getLastModified
+```
+
+5. Finally, you can access the resource data. Use the getInputStream method to obtain
+   an input stream for reading the information. (This is the same input stream
+   that the openStream method of the URL class returns.)

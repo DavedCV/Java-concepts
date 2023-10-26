@@ -11,7 +11,7 @@
   We build applications that rely on third part libraries. With maven we change the way we obtain those dependencies and the way we manage them.
 
 - Project management tool
-- Standarized approach to build software 
+- Standarized approach to build software
 - Command line tool
 - IDE integration
 
@@ -54,7 +54,7 @@
   - artifactId
   - groupId
   - version
-- Specifies project information, plugins, goals, dependencies and profiles 
+- Specifies project information, plugins, goals, dependencies and profiles
 - The Super POM is Maven's default POM. All POMs extend the Super POM unless explicitly set, meaning the configuration specified in the Super POM is inherited by the POMs you created for your projects.
 
 ## Repositories
@@ -138,7 +138,7 @@ Consists of 8 major steps or phases for compiling, testing, building and install
 - **mvn idea:idea** generates project files for intellij
 - **mvn release:perform** performs a release build
 - **mvn deploy** copies the packaged JAR/WAR file to the remote repository
-- **mvn arehctype:generate** this command is used to generate a new project from an archetype, which is a template for a project. This command is typically used to create new projects based on  a specific pattern or structure  
+- **mvn arehctype:generate** this command is used to generate a new project from an archetype, which is a template for a project. This command is typically used to create new projects based on a specific pattern or structure
 - **mvn dependency:tree** this command is used to display the dependncies of the project in a tree format. This command is typically used to understand the dependencies of the prihect and troubleshoot any issues.
 
 # POM inheritance
@@ -208,9 +208,18 @@ mvn dependency:copy-dependencies
 
 Once the dependencies are defined in the "pom.xml" file, Maven will automatically download and resolve the dependencies from the central repository. Maven check if the dependency is already downloaded in the local repository, and if not, downloads it from the central repository.
 
-## Dependency Scope
+## Repositories
 
-Dependencies in Maven can hace different scopes, which determine when and where the dependency is used. The four main scopes are: **compile, provided, runtime and test**. The scope can be specified in the dependency declaration.
+There are exactly two types of repositories: local and remote:
+
+1. the local repository is a directory on the computer where Maven runs. It caches remote downloads and contains temporary build artifacts that you have not yet released.
+2. remote repositories refer to any other type of repository, accessed by a variety of protocols such as file:// and https://. These repositories might be a truly remote repository set up by a third party to provide their artifacts for downloading (for example, repo.maven.apache.org). Other "remote" repositories may be internal repositories set up on a file or HTTP server within your company, used to share private artifacts between development teams and for releases.
+
+## Transitive Dependencies
+
+Maven avoids the need to discover and specify the libraries that your own dependencies require by including transitive dependencies automatically.
+
+This feature is facilitated by reading the project files of your dependencies from the remote repositories specified. In general, all dependencies of those projects are used in your project, as are any that the project inherits from its parents, or from its dependencies, and so on.
 
 ## Managing Dependencies
 
@@ -221,6 +230,12 @@ mvn versions:use-latest-versions
 ```
 
 This will update all the project's dependencies to the latest version available in the central repository.
+
+## Dependency Scope
+
+Dependencies in Maven can have different scopes, which determine when and where the dependency is used. The four main scopes are: **compile, provided, runtime and test**. The scope can be specified in the dependency declaration.
+
+The default scope is **compile**.
 
 ## Types of dependencies:
 
@@ -238,17 +253,33 @@ In maven there are several types of dependencies that can be defined in the proj
 
 - **Import dependencies:** These dependencies are used to import dependencies from other maven projects. When importing a dependency, maven will use the imported project's "pom.xml" file to download and manage the dependency.
 
+## Dependencies Exclusions
+
+Since Maven resolves dependencies transitively, it is possible for unwanted dependencies to be included in your project's classpath. For example, a certain older jar may have security issues or be incompatible with the Java version you're using. To address this, Maven allows you to exclude specific dependencies. Exclusions are set on a specific dependency in your POM, and are targeted at a specific groupId and artifactId. When you build your project, that artifact will not be added to your project's classpath by way of the dependency in which the exclusion was declared.
+
+To do this we use the following inside the dependencies that have the transitive dependency that we dont want:
+
+```xml
+<exclusions>
+  <exclusion>  <!-- declare the exclusion here -->
+    <groupId>sample.ProjectB</groupId>
+    <artifactId>Project-B</artifactId>
+  </exclusion>
+</exclusions>
+```
+
 # Maven plugins
 
 The maven plugins are central part of maven framework, it is used to perform specific goal.
 
 According to apache maven, there are 2 types of maven plugins:
+
 - Build plugins
 - Reporting plugins
 
 ## Build Plugins
 
-These plugins are executed at the time of build. 
+These plugins are executed at the time of build.
 
 ## Reporting plugins
 
