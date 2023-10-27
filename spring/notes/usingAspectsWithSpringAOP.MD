@@ -245,3 +245,93 @@ The method proceed() of the ProceedingJoinPoint parameter calls the intercepted 
 You can even implement logic where the actual method isn’t called anymore. For example, an aspect that applies some authorization rules decides whether to delegate further to a method the app protects. If the authorization rules aren’t fulfilled, the aspect doesn’t delegate to the intercepted method it protects.
 
 Also, observe that the proceed() method throws a Throwable. The method proceed() is designed to throw any exception coming from the intercepted method. In this example, I chose the easy way to propagate it further, but you can use a try-catch-finally block to treat this throwable if you need it.
+
+### Altering the intercepted method’s parameters and the returned value
+
+Aspects are really powerful. Not only can they intercept a method and alter its execution, but they can also intercept the parameters used to call the method and possibly alter them or the value the intercepted method returns.
+
+Knowing how to do this gives you even more opportunities in what you can implement using aspects.
+
+Suppose you want to log the parameters used to call the service method and what the method returned.
+
+Changing the return of the method:
+
+```java
+@Service
+public class CommentService {
+
+    // To log a message in the app’s console every time
+    // someone calls the use case, we use a logger object.
+    private Logger logger = Logger.getLogger(CommentService.class.getName());
+
+    //  This method defines
+    //  the use case for our
+    //  demonstration.
+    public String publishComment(Comment comment) {
+        logger.info("Publishing comment: " + comment.getText());
+        return "SUCESS";
+    }
+}
+```
+
+The aspect can easily find the name of the intercepted method and the method parameters. Remember that the **ProceedingJoinPoint** parameter of the  aspect method represents the intercepted method. You can use this parameter to  get any information related to the intercepted method (parameters, method name, target object, and so on).
+
+Now we can change the aspect also to log the details we need:
+
+```java
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Around("execution(* org.example.services.*.*(..))") // Defines which are the intercepted methods
+    public Object log(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        // Obtains the name and parameters of the intercepted method
+        String methodName = joinPoint.getSignature().getName();
+        Object[] arguments = joinPoint.getArgs();
+
+        // Logs the name and parameters of the intercepted method
+        logger.info("Method " + methodName + " with parameters " + Arrays.asList(arguments) + " will execute");
+
+        // Delegates to the actual intercepted method
+        Object returnedByMethod = joinPoint.proceed();
+
+        logger.info("Method executed and returned " + returnedByMethod);
+
+        // Returns the value returned by the intercepted method
+        return returnedByMethod;
+    }
+}
+```
+
+![](/images/aspectLOgsMethodInfo.png)
+
+But aspects are even more powerful. They can alter the execution of the intercepted method by:
+
+- Changing the value of the parameters sent to the method
+- Changing the returned value received by the caller
+- Throwing an exception to the caller or catching and treating an exception thrown by the intercepted method
+
+You can be extremely flexible in altering the call of an intercepted method. You can even change its behavior completely. But be careful! When you alter the logic through an aspect, you make a part of the logic transparent.
+
+The whole idea of decoupling a part of the logic is to avoid duplicating code and hide what’s irrelevant, so a developer can easily focus on the business logic code. When considering writing an aspect, put yourself in the developer’s shoes. Someone who needs to understand the code should easily realize what’s happening.
+
+The following listing shows that when you call the proceed() method without sending any parameters, the aspect sends the original parameters to the intercepted method. But you can choose to provide a parameter when calling the proceed() method. This parameter is an array of objects that the aspect sends to the intercepted method instead of the original parameter values. The aspect logs the value returned by the intercepted method, but it returns to the caller a different value.
+
+### Intercepting annotated methods
+
+You can also use annotations to mark the methods you want an aspect to intercept with a comfortable syntax that allows you also to avoid writing complex AspectJ pointcut expressions.
+
+In the CommentService class, we’ll add three methods: publishComment(), deleteComment(), and editComment(). We want to define a custom annotation and log only the execution of the methods we mark using the custom annotation. To achieve this objective, you need to do the following:
+
+1. Define a custom annotation, and make it accessible at runtime. We’ll call this annotation @ToLog.
+2. Use a different AspectJ pointcut expression for the aspect method to tell the aspect to intercept the methods annotated with the custom annotation.
+
+![](/images/interceptAnnotatedMethods.png)
+
+
+In the next code snippet, you find the declaration of the custom annotation. The definition of the retention policy with @Retention(RetentionPolicy.RUNTIME) is critical. By default, in Java annotations cannot be intercepted at runtime. You need to explicitly specify that someone can intercept annotations by setting the retention policy to RUNTIME. The @Target annotation specifies which language elements we can use this annotation for. By default, you can annotate any language elements, but it’s always a good idea to restrict the annotation to only what you make it for—in our case, methods:
+
+```java
+```
