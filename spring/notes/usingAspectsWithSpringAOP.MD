@@ -367,4 +367,69 @@ In the CommentService class, we’ll add three methods: publishComment(), delete
 In the next code snippet, you find the declaration of the custom annotation. The definition of the retention policy with @Retention(RetentionPolicy.RUNTIME) is critical. By default, in Java annotations cannot be intercepted at runtime. You need to explicitly specify that someone can intercept annotations by setting the retention policy to RUNTIME. The @Target annotation specifies which language elements we can use this annotation for. By default, you can annotate any language elements, but it’s always a good idea to restrict the annotation to only what you make it for—in our case, methods:
 
 ```java
+// Enables the annotation to be intercepted at runtime
+@Retention(RetentionPolicy.RUNTIME)
+// Restricts this annotation to only be used with methods
+@Target(ElementType.METHOD)
+public @interface ToLog {
+}
 ```
+
+In the following listing, you find the definition of the CommentService class, which now defines three methods. We annotated only the deleteComment() method, so we expect the aspect will intercept only this one.
+
+```java
+@Service
+public class CommentService {
+
+    // To log a message in the app’s console every time
+    // someone calls the use case, we use a logger object.
+    private Logger logger = Logger.getLogger(CommentService.class.getName());
+
+    public void publishComment(Comment comment) {
+        logger.info("Publishing comment: " + comment.getText());
+    }
+
+    // We use the custom annotation for the
+    // methods we want the aspect to intercept.
+    @ToLog
+    public void deleteComment(Comment comment) {
+        logger.info("Deleting comment: " + comment.getText());
+    }
+
+    public void editComment(Comment comment) {
+        logger.info("Editing comment: " + comment.getText());
+    }
+}
+```
+
+To weave the aspect to the methods annotated with the custom annotation, we use the following AspectJ pointcut expression: **@annotation(ToLog)**. This expression refers to any method annotated with the annotation named @ToLog (which is, in this case, our custom annotation).
+
+```java
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Around("@annotation(ToLog)") // Weaving the aspect to the methods annotated with @ToLog
+    public Object log(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        // Obtains the name and parameters of the intercepted method
+        String methodName = joinPoint.getSignature().getName();
+        Object[] arguments = joinPoint.getArgs();
+
+        // Logs the name and parameters of the intercepted method
+        logger.info("Method " + methodName + " with parameters " + Arrays.asList(arguments) + " will execute");
+
+        // Delegates to the actual intercepted method with different parameters
+        Object returnedByMethod = joinPoint.proceed();
+
+        logger.info("Method executed and returned " + returnedByMethod);
+
+        return returnedByMethod;
+    }
+}
+```
+
+![](/images/aspectInterceptAnnotatedMethodFlow.png)
+
+### Other advice annotations you can use
