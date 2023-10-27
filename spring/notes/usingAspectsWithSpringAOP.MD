@@ -433,3 +433,16 @@ public class LoggingAspect {
 ![](/images/aspectInterceptAnnotatedMethodFlow.png)
 
 ### Other advice annotations you can use
+
+So far in this chapter, we’ve used the advice annotation @Around. This is indeed the most used of the advice annotations in Spring apps because you can cover any implementation case: you can do things before, after, or even instead of the intercepted method. You can alter the logic any way you want from the aspect.
+
+But you don’t necessarily always need all this flexibility. A good idea is to look for the most straightforward way to implement what you need to implement. Any app implementation should be defined by simplicity.
+
+For simple scenarios, Spring offers four alternative advice annotations that are less powerful than @Around. It’s recommended you use these when their capabilities are enough to keep the implementation simple:
+
+- **@Before** Calls the method defining the aspect logic before the execution of the intercepted method
+- **@AfterReturning** Calls the method defining the aspect logic after the method successfully returns, and provides the returned value as a parameter to the aspect method. The aspect method isn’t called if the intercepted method throws an exception.
+- **@AfterThrowing** Calls the method defining the aspect logic if the intercepted method throws an exception, and provides the exception instance as a parameter to the aspect method.
+- **@After** Calls the method defining the aspect logic only after the intercepted method execution, whether the method successfully returned or threw an exception.
+
+You use these advice annotations the same way as for @Around. You provide them with an AspectJ pointcut expression to weave the aspect logic to specific method executions.
