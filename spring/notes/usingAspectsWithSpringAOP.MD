@@ -135,3 +135,113 @@ Let’s now enhance the project with an aspect class that intercepts the method 
 4. Implement the aspect logic.
 
 ![](/images/createAspectSteps.png)
+
+#### STEP 1: ENABLING THE ASPECTS MECHANISM FOR YOUR APPLICATION
+
+For the first step, you need to tell Spring you’ll use aspects in your app. Whenever you use a specific mechanism provided by Spring, you have to explicitly enable it by annotating your configuration class with a particular annotation. In most cases, the names of
+these annotations start with “Enable.”
+
+In this example, we need to use the @EnableAspectJAutoProxy annotation to enable the aspect capabilities.
+
+```java
+@Configuration
+@ComponentScan(basePackages = "org.example.services")
+// Enables the aspects mechanism in our Spring app
+@EnableAspectJAutoProxy
+public class ProjectConfiguration {
+}
+```
+
+#### STEP 2: CREATE A CLASS THAT DEFINES THE ASPECT, AND ADD AN INSTANCE FOR THIS CLASS IN THE SPRING CONTEXT
+
+We need to create a new bean in the Spring context that defines the aspect. This object holds the methods, which will intercept specific method calls and augment them with specific logic.
+
+```java
+@Aspect
+public class LoggingAspect {
+    public void log() {
+        // To implement later
+    }
+}
+```
+
+You can use any of the approaches we learned to add an instance of this class to the Spring context.
+
+```java
+@Configuration
+@ComponentScan(basePackages = "org.example.services")
+// Enables the aspects mechanism in our Spring app
+@EnableAspectJAutoProxy
+public class ProjectConfiguration {
+    @Bean
+    // Adds an instance of the LoggingAspect class to the Spring context
+    public LoggingAspect aspect() {
+        return new LoggingAspect();
+    }
+}
+```
+
+Remember, you need to make this object a bean in the Spring context because Spring needs to know about any object it needs to manage. Also, the @Aspect annotation isn’t a stereotype annotation. Using @Aspect, you tell Spring that the class implements the definition of an aspect, but Spring won’t also create a bean for this class.
+
+#### STEP 3: USE AN ADVICE ANNOTATION TO TELL SPRING WHEN AND WHICH METHOD CALLS TO INTERCEPT
+
+Now that we have defined the aspect class, we choose the advice and annotate the method accordingly.
+
+```java
+@Aspect
+public class LoggingAspect {
+
+    @Around("execution(* org.example.services.*.*(..))") // Defines which are the intercepted methods
+    public void log(ProceedingJoinPoint joinPoint) {
+        // Delegates to the actual intercepted method
+        joinPoint.proceed();
+    }
+}
+```
+
+Other than using the @Around annotation, you also observe I’ve written an unusual string expression as the value of the annotation, and I have added a parameter to the aspect method. What are these?
+
+- The peculiar expression used as a parameter to the @Around annotation tells Spring which method calls to intercept. Don’t be intimidated by this expression! This expression language is called AspectJ pointcut language, and you won’t need to learn it by heart to use it. In practice, you don’t use complex expressions.
+
+    Theoretically, you can write very complex AspectJ pointcut expressions to identify a particular set of method calls to be intercepted. This language is really powerful. But it’s always better to avoid writing complex expressions. In most cases, you can find simpler alternatives.
+
+    ![](/images/adviceNotation.png)
+
+    It means Spring intercepts any method defined in a class that is in the services package, regardless of the method’s return type, the class it belongs to, the name of the method, or the parameters the method receives.
+
+- Now let’s look at the second element I’ve added to the method: the ProceedingJoinPoint parameter, which represents the intercepted method. The main thing you do with this parameter is tell the aspect when it should delegate further to the actual method.
+
+#### STEP 4: IMPLEMENT THE ASPECT LOGIC
+
+```java
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Around("execution(* org.example.services.*.*(..))") // Defines which are the intercepted methods
+    public void log(ProceedingJoinPoint joinPoint) throws Throwable {
+        // Prints a message in the console before the intercepted method’s execution
+        logger.info("Method will execute");
+        // Delegates to the actual intercepted method
+        joinPoint.proceed();
+        // Prints a message in the console after the intercepted method’s execution
+        logger.info("Method executed");
+    }
+}
+```
+
+Now the aspect:
+
+1. Intercepts the method
+2. Displays something in the console before calling the intercepted method
+3. Calls the intercepted method
+4. Displays something in the console after calling the intercepted method
+
+![](/images/aspectBehavior.png)
+
+The method proceed() of the ProceedingJoinPoint parameter calls the intercepted method, publishComment(), of the CommentService bean. If you don’t call proceed(), the aspect never delegates further to the intercepted method.
+
+You can even implement logic where the actual method isn’t called anymore. For example, an aspect that applies some authorization rules decides whether to delegate further to a method the app protects. If the authorization rules aren’t fulfilled, the aspect doesn’t delegate to the intercepted method it protects.
+
+Also, observe that the proceed() method throws a Throwable. The method proceed() is designed to throw any exception coming from the intercepted method. In this example, I chose the easy way to propagate it further, but you can use a try-catch-finally block to treat this throwable if you need it.
