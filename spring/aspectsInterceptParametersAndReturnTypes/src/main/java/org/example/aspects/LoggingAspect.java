@@ -3,6 +3,7 @@ package org.example.aspects;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.example.models.Comment;
 
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -22,12 +23,16 @@ public class LoggingAspect {
         // Logs the name and parameters of the intercepted method
         logger.info("Method " + methodName + " with parameters " + Arrays.asList(arguments) + " will execute");
 
-        // Delegates to the actual intercepted method
-        Object returnedByMethod = joinPoint.proceed();
+        Comment comment = new Comment();
+        comment.setText("Some other text!");
+        Object[] newArgs = {comment};
+
+        // Delegates to the actual intercepted method with different parameters
+        Object returnedByMethod = joinPoint.proceed(newArgs);
 
         logger.info("Method executed and returned " + returnedByMethod);
 
-        // Returns the value returned by the intercepted method
-        return returnedByMethod;
+        // Returns a different value, not the actual one returned by the target method
+        return "FAILED";
     }
 }

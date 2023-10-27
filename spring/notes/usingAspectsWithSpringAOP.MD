@@ -319,6 +319,39 @@ The whole idea of decoupling a part of the logic is to avoid duplicating code an
 
 The following listing shows that when you call the proceed() method without sending any parameters, the aspect sends the original parameters to the intercepted method. But you can choose to provide a parameter when calling the proceed() method. This parameter is an array of objects that the aspect sends to the intercepted method instead of the original parameter values. The aspect logs the value returned by the intercepted method, but it returns to the caller a different value.
 
+```java
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Around("execution(* org.example.services.*.*(..))") // Defines which are the intercepted methods
+    public Object log(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        // Obtains the name and parameters of the intercepted method
+        String methodName = joinPoint.getSignature().getName();
+        Object[] arguments = joinPoint.getArgs();
+
+        // Logs the name and parameters of the intercepted method
+        logger.info("Method " + methodName + " with parameters " + Arrays.asList(arguments) + " will execute");
+
+        Comment comment = new Comment();
+        comment.setText("Some other text!");
+        Object[] newArgs = {comment};
+
+        // Delegates to the actual intercepted method with different parameters
+        Object returnedByMethod = joinPoint.proceed(newArgs);
+
+        logger.info("Method executed and returned " + returnedByMethod);
+
+        // Returns a different value, not the actual one returned by the target method
+        return "FAILED";
+    }
+}
+```
+
+> Be careful with using aspects! You should only use them to hide irrelevant lines of code that can easily be implied. Aspects are so powerful they can bring you to the “dark side” of hiding relevant code and make your app more difficult to maintain. Use aspects with caution!
+
 ### Intercepting annotated methods
 
 You can also use annotations to mark the methods you want an aspect to intercept with a comfortable syntax that allows you also to avoid writing complex AspectJ pointcut expressions.
