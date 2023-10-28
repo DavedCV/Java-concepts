@@ -446,3 +446,191 @@ For simple scenarios, Spring offers four alternative advice annotations that are
 - **@After** Calls the method defining the aspect logic only after the intercepted method execution, whether the method successfully returned or threw an exception.
 
 You use these advice annotations the same way as for @Around. You provide them with an AspectJ pointcut expression to weave the aspect logic to specific method executions.
+
+```java
+    /*
+    * - The AspectJ pointcut expression specifies which methods this aspect logic weaves to
+    * - Optionally, when you use @AfterReturning, you can get the value returned by the intercepted method. In this
+    * case, we add the “returning” attribute with a value that corresponds to the name of the method’s parameter
+    * where this value will be provided.
+    * - The parameter name should be the same as the value of the “returning” attribute of the annotation or missing
+    * if we don’t need to use the returned value.
+    * */
+    @AfterReturning(value = "@annotation(ToLog)", returning = "returnedValue")
+    public void log(Object returnedValue) {
+        logger.info("Method executed and returned: " + returnedValue);
+    }
+```
+
+## The aspect execution chain
+
+In a real-world app, a method is often intercepted by more than one aspect. For example, we have a method for which we want to log the execution and apply some security constraints. There’s nothing wrong with having as many aspects as we need, but when this happens, we need to ask ourselves the following questions:
+
+- In which order does Spring execute these aspects?
+- Does the execution order matter?
+
+We’ll analyze an example to answer these two questions. Suppose, for a method, we need to apply some security restrictions as well as log its executions. We have two aspects that take care of these responsibilities:
+
+- SecurityAspect—Applies the security restrictions. This aspect intercepts the method, validates the call, and in some conditions doesn’t forward the call to the intercepted method.
+- LoggingAspect—Logs the beginning and end of the intercepted method execution.
+
+**When you have multiple aspects weaved to the same method, they need to execute one after another.** One way is to have the SecurityAspect execute first and then delegate to the LoggingAspect, which further delegates to the intercepted method. Or the other way around.
+
+The order in which the aspects execute is important because executing the aspects in different orders can have different results.
+
+![](/images/aspectExecutionOrder.png)
+
+- By default, Spring doesn’t guarantee the order in which two aspects in the same execution chain are called. If the execution order is not relevant, then you just need to define the aspects and leave the framework to execute them in whatever order. 
+- If you need to define the aspects’ execution order, you can use the **@Order** annotation. This annotation receives an ordinal (a number) representing the order in the execution chain for a specific aspect. The smaller the number, the earlier that aspect executes. If two values are the same, the order of execution is again not defined.
+
+Defining our aspects that intercept the publishMethod (annotated), and without specifying any execution order, we have the following code:
+
+```java
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Around(value = "@annotation(ToLog)")
+    public Object log(ProceedingJoinPoint joinPoint) throws Throwable {
+        logger.info("Logging Aspect: Calling the intercepted method");
+
+        // The proceed() method here delegates further in
+        // the aspect execution chain. It can either call the
+        // next aspect or the intercepted method
+        Object returnedValue = joinPoint.proceed();
+
+        logger.info("Logging Aspect: Method executed and returned " + returnedValue);
+
+        return returnedValue;
+    }
+}
+```
+
+```java
+@Aspect
+public class SecurityAspect {
+
+    private Logger logger= Logger.getLogger(SecurityAspect.class.getName());
+
+    @Around(value = "@annotation(ToLog)")
+    public Object secure(ProceedingJoinPoint joinPoint) throws Throwable {
+        logger.info("Security Aspect: Calling the intercepted method");
+
+        // The proceed() method here delegates further
+        // in the aspect execution chain. It can call either the next
+        // aspect or the intercepted method.
+        Object returnedValue = joinPoint.proceed();
+
+        logger.info("Security Aspect: Method executed and returned " +
+                            returnedValue);
+
+        return returnedValue;
+    }
+}
+```
+
+```java
+@Service
+public class CommentService {
+    private Logger logger = Logger.getLogger(CommentService.class.getName());
+
+    @ToLog
+    public String publishComment(Comment comment) {
+        logger.info("Publishing comment:" + comment.getText());
+        return "SUCCESS";
+    }
+}
+```
+
+```java
+@Configuration
+@ComponentScan (basePackages = "org.example.services")
+public class ProjectConfiguration {
+
+    // Both aspects need to be added as
+    // beans in the Spring context.
+
+    @Bean
+    public SecurityAspect securityAspect() {
+        return new SecurityAspect();
+    }
+
+    @Bean
+    public LoggingAspect loggingAspect() {
+        return new LoggingAspect();
+    }
+}
+```
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        var context = new AnnotationConfigApplicationContext(ProjectConfiguration.class);
+
+        Comment comment = new Comment();
+        comment.setText("Demo comment");
+        comment.setAuthor("David");
+
+        CommentService commentService = context.getBean(CommentService.class);
+        commentService.publishComment(comment);
+    }
+}
+```
+
+Right now spring doesn't guarantee a specific order.
+
+![](/images/multipleAspectsWithoutSpecificOrderFlow.png)
+
+To reverse the order in which LoggingAspect and SecurityAspect execute, we use the @Order annotation
+
+```java
+@Aspect
+@Order(1)
+public class SecurityAspect {
+
+    private Logger logger= Logger.getLogger(SecurityAspect.class.getName());
+
+    @Around(value = "@annotation(ToLog)")
+    public Object secure(ProceedingJoinPoint joinPoint) throws Throwable {
+        logger.info("Security Aspect: Calling the intercepted method");
+
+        // The proceed() method here delegates further
+        // in the aspect execution chain. It can call either the next
+        // aspect or the intercepted method.
+        Object returnedValue = joinPoint.proceed();
+
+        logger.info("Security Aspect: Method executed and returned " +
+                            returnedValue);
+
+        return returnedValue;
+    }
+}
+```
+
+```java
+@Aspect
+@Order(2)
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Around(value = "@annotation(ToLog)")
+    public Object log(ProceedingJoinPoint joinPoint) throws Throwable {
+        logger.info("Logging Aspect: Calling the intercepted method");
+
+        // The proceed() method here delegates further in
+        // the aspect execution chain. It can either call the
+        // next aspect or the intercepted method
+        Object returnedValue = joinPoint.proceed();
+
+        logger.info("Logging Aspect: Method executed and returned " + returnedValue);
+
+        return returnedValue;
+    }
+}
+```
+
+In this case we gave more priority to the security aspect. Lower ord is executed first.
+
+![](/images/multipleAspectsWithSpecificOrderFlow.png)
