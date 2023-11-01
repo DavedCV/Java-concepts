@@ -141,3 +141,32 @@ Also, you shouldn’t use path variables for optional values.
 ![](/images/requestParametersVsPathVariables.png)
 
 When the page you write depends on only one or two values that are the core of the end result, it’s better to write them directly in the path to make the request easier to read. The URL is also easier to find when you bookmark it in your browser and easier to index with a search engine
+
+To reference a path variable in the controller’s action, you simply give it a name and add it to the path between curly braces. You then use the @PathVariable annotation to mark the controller’s action parameter to get the path variable’s value.
+
+```java
+@Controller
+public class MainController {
+
+    // To define a path variable, you assign it
+    // a name and put it in the path between
+    // curly braces.
+    @RequestMapping("/home/{color}")
+    // You mark the parameter where you want to get the path variable value
+    // with the @PathVariable annotation. The name of the parameter must be
+    // the same as the name of the variable in the path.
+    public String home(Model page, @PathVariable String color) {
+        page.addAttribute("username", "David");
+        page.addAttribute("color", color);
+        return "home.html";
+    }
+}
+```
+
+## Using the GET and POST HTTP methods
+
+In this section, we discuss HTTP methods and how the client uses them to express what action (create, change, retrieve, delete) it will apply to the requested resource. **A path and a verb identify an HTTP request.** For example, by using GET, we represent an action that only retrieves data. It’s a way for the client to say it wants to obtain something from the server, but the call won’t change data. But you’ll need more than this. An app also needs to change, add, or delete data.
+
+We’ve relied on the request path to reach a specific action of the controller, but in a more complex scenario you can assign the same path to multiple actions of the controller as long as you use different HTTP methods. We’ll work on an example to apply such a case.
+
+![](/images/basicHTTPmethos.png)
