@@ -91,3 +91,53 @@ In most cases, to send data through the HTTP request you use one of the followin
 - The **HTTP request body** is mainly used to send a larger quantity of data (formatted as a string, but sometimes even binary data such as a file).
 
 ### Using request parameters to send data from client to server
+
+You use request parameters in the following scenarios:
+
+- *The quantity of data you send is not large*. You set the request parameters using query variables. This approach limits you to about 2,000 characters.
+- *You need to send optional data*. A request parameter is a clean way to deal with a value the client might not send. The server can expect to not get a value for spe- cific request parameters.
+
+To get the value from a request parameter, you need to add one more parameter to the controller’s action method and annotate that parameter with the @RequestParam annotation. The @RequestParam annotation tells Spring it needs to get the value from the HTTP request parameter with the same name as the
+method’s parameter name.
+
+```java
+@Controller
+public class MainController {
+
+
+    @RequestMapping("/home")
+    // We define a new parameter for the controller’s action method and annotate it with @RequestParam.
+    public String home(Model page, @RequestParam(required = false) String color) {
+        page.addAttribute("username", "David");
+
+        if (color != null) page.addAttribute("color", color);
+        else page.addAttribute("color", "blue");
+
+        return "home.html";
+    }
+}
+```
+
+Run the application and access the /home path. To set the request parameter’s value, you need to use the next snippet’s syntax:
+
+`http://localhost:8080/home?color=blue`
+
+When setting HTTP request parameters, you extend the path with a ? symbol followed by pairs of key=value parameters separated by the & symbol.
+
+> A request parameter is mandatory by default. If the client doesn’t provide a value for it, the server sends back a response with the status HTTP “400 Bad Request.” If you wish the value to be optional, you need to explicitly specify this on the annotation using the required attribute: @RequestParam(required=false)
+
+### Using path variables to send data from client to server
+
+Using path variables is also a way of sending data from client to server. But instead of using the HTTP request parameters, you directly set variable values in the path, as presented in the next snippet.
+
+`http://localhost:8080/home/blue`
+
+You don’t identify the value with a key anymore. You just take that value from a precise position in the path. On the server side, you extract that value from the path from the specific position.
+
+You may have more than one value provided as a path variable, but it’s generally better to avoid using more than a couple. You’ll observe that the path becomes more challenging to read if you go with more than two path variables.
+
+Also, you shouldn’t use path variables for optional values.
+
+![](/images/requestParametersVsPathVariables.png)
+
+When the page you write depends on only one or two values that are the core of the end result, it’s better to write them directly in the path to make the request easier to read. The URL is also easier to find when you bookmark it in your browser and easier to index with a search engine
