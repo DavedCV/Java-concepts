@@ -170,3 +170,213 @@ In this section, we discuss HTTP methods and how the client uses them to express
 We’ve relied on the request path to reach a specific action of the controller, but in a more complex scenario you can assign the same path to multiple actions of the controller as long as you use different HTTP methods. We’ll work on an example to apply such a case.
 
 ![](/images/basicHTTPmethos.png)
+
+Now let’s implement an example that uses more than just HTTP GET. The scenario is the following: We have to create an app that stores a list of products. Each product has a name and a price. The web app displays a list of all products and allows the user to add one more product through an HTML form.
+
+- View all products in the list; here, we’ll continue using HTTP GET.
+- Add products to the list; here, we’ll use HTTP POST.
+
+In the project, we create a Product class to describe a product with its name and price attributes. The Product class is a model class.
+
+```java
+public class Product {
+    private String name;
+    private String price;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPrice() {
+        return price;
+    }
+
+    public void setPrice(String price) {
+        this.price = price;
+    }
+}
+```
+
+Now that we have a way to represent a product, let’s create the list where the app stores the products. The web app will display the product in this list on a web page, and in this list the user can add more products. We will implement the two use cases (getting the list of products to display and adding a new product) as methods in a service class.
+
+```java
+@Service
+public class ProductService {
+    private List<Product> products = new ArrayList<>();
+
+    public void addProduct(Product p) {
+        products.add(p);
+    }
+
+    public List<Product> findAll() {
+        return products;
+    }
+}
+```
+
+A controller will call the use cases implemented by the service. The controller gets data about a new product from the client and adds it to the list by calling the service, and the controller gets the list of products and sends it to the view.
+
+First, let’s create a ProductController class in a package named “controllers” and allow this controller to inject the service bean.
+
+```java
+@Controller
+public class ProductsController {
+
+    private final ProductService productService;
+
+    // We use DI through the controller’s constructor parameters
+    // to get the service bean from the Spring context.
+    @Autowired
+    public ProductsController(ProductService productService) {
+        this.productService = productService;
+    }
+}
+```
+
+Now we expose the first use case: displaying the product list on a page. This functionality should be straightforward. We use a Model parameter to send the data from the controller to the view.
+
+```java
+@Controller
+public class ProductsController {
+
+    private final ProductService productService;
+
+    // We use DI through the controller’s constructor parameters
+    // to get the service bean from the Spring context.
+    @Autowired
+    public ProductsController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    // We map the controller action to the /products path. The
+    // @RequestMapping annotation, by default, uses the HTTP GET method.
+    @RequestMapping("/products")
+    public String viewProducts(Model model){
+        var products = productService.findAll();
+        model.addAttribute("products", products);
+
+        return "products.html";
+    }
+}
+```
+
+To display the products in the view, we define the products.html page in the “resources/templates” folder of the project.
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>Products</h1>
+    <h2>View products</h2>
+
+    <table>
+        <tr>
+            <th>PRODUCT NAME</th>
+            <th>PRODUCT PRICE</th>
+        </tr>
+        <tr th:each="p: ${products}">
+            <td th:text="${p.name}"></td>
+            <td th:text="${p.price}"></td>
+        </tr>
+    </table>
+</body>
+</html>
+```
+
+But we still need to implement the second use case before we test the app’s functionality. We’ll see nothing more than an empty table if we don’t have an option to add a product to the list.
+
+```java
+@Controller
+public class ProductsController {
+
+    private final ProductService productService;
+
+    // We use DI through the controller’s constructor parameters
+    // to get the service bean from the Spring context.
+    @Autowired
+    public ProductsController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    // We map the controller action to the /products path. The
+    // @RequestMapping annotation, by default, uses the HTTP GET method.
+    @RequestMapping("/products")
+    public String viewProducts(Model model) {
+        List<Product> products = productService.findAll();
+        model.addAttribute("products", products);
+        return "products.html";
+    }
+
+    // We map the controller action
+    // to the /products path. We use
+    // the method attribute of the
+    // @RequestMapping annotation to
+    // change the HTTP method to POST.
+    @RequestMapping(path = "/products", method = RequestMethod.POST)
+    public String addProduct(
+            @RequestParam String name,
+            @RequestParam double price,
+            Model model
+    )
+    {
+        Product p = new Product();
+        p.setName(name);
+        p.getPrice(price);
+        productService.addProduct(p);
+
+        var products = productService.findAll();
+        model.addAttribute("products", products);
+
+        return "products.html";
+    }
+}
+```
+
+We used the attribute method of the @RequestMapping annotation to specify the HTTP method. If you don’t set a method, by default @RequestMapping uses HTTP GET.
+
+We can also change the view to allow the user to call the controller’s HTTP POST action and add a product to the list. We’ll use an HTML form to make this HTTP request.
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+</head>
+<body>
+    <h1>Products</h1>
+
+    <h2>View products</h2>
+    <table>
+        <tr>
+            <th>PRODUCT NAME</th>
+            <th>PRODUCT PRICE</th>
+        </tr>
+        <tr th:each="p: ${products}" >
+            <td th:text="${p.name}"></td>
+            <td th:text="${p.price}"></td>
+        </tr>
+    </table>
+
+    <h2>Add a product</h2>
+    <form action="/products" method="post">
+        <label for="name">Name:</label>
+        <input id="name" type="text" name="name"/>
+        <label for="price">Price:</label>
+        <input id="price" type="number" name="price" step="any"/>
+
+        <button type="submit">Add Product</button>
+    </form>
+</body>
+</html>
+```
+
+Run and test the app. You access the page in your browser on http://localhost:8080/ products, and you should be able to add new products and see those already added.
