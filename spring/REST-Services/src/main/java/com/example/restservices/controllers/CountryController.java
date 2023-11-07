@@ -1,6 +1,8 @@
 package com.example.restservices.controllers;
 
 import com.example.restservices.models.Country;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,5 +29,22 @@ public class CountryController {
 
         // Returns a collection in the HTTP response body
         return List.of(c1, c2);
+    }
+
+    @GetMapping("/colombia")
+    public ResponseEntity<Country> colombia() {
+        Country c = Country.of("Colombia",  51);
+
+        /*
+        * - Changes the HTTP response status 202 Accepted
+        * - Adds three custom headers to the response
+        * - Sets the response body
+        * */
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .header("continent", "Latin America")
+                .header("capital", "Bogota")
+                .header("favorite_food", "bandeja paisa")
+                .body(c);
     }
 }
