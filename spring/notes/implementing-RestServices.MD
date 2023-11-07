@@ -232,3 +232,152 @@ In this section, we discuss setting the response status and response headers. So
 - 500 Error on server if an exception was thrown on the server side for any reason while processing the request. Usually, for this kind of exception, the client can’t do anything, and it’s expected someone should solve the problem on the backend.
 
 However, in some cases, the requirements ask you to configure a custom status. How could you do that? The easiest and most common way to customize the HTTP response is using the **ResponseEntity** class. This class provided by Spring allows you to specify the response body, status, and headers on the HTTP response.
+
+To show an example: 
+
+```java
+// Marking the class as a REST controller to add a bean
+// in the Spring context and also inform the dispatcher
+// servlet not to look for a view when this method returns
+@RestController
+public class CountryController {
+
+    @GetMapping("/france")
+    public Country france() {
+        Country c = Country.of("france", 67);
+
+        // Returning an instance of type Country
+        return c;
+    }
+
+    @GetMapping("/all")
+    public List<Country> all() {
+        Country c1 = Country.of("France", 67);
+        Country c2 = Country.of("Spain", 47);
+
+        // Returns a collection in the HTTP response body
+        return List.of(c1, c2);
+    }
+
+    @GetMapping("/colombia")
+    public ResponseEntity<Country> colombia() {
+        Country c = Country.of("Colombia",  51);
+
+        /*
+        * - Changes the HTTP response status 202 Accepted
+        * - Adds three custom headers to the response
+        * - Sets the response body
+        * */
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .header("continent", "Latin America")
+                .header("capital", "Bogota")
+                .header("favorite_food", "bandeja paisa")
+                .body(c);
+    }
+}
+```
+
+A controller action returns a ResponseEntity instance instead of the object you want to set on the response body directly. The ResponseEntity class allows you to set the response body’s value and the response status and headers. We set three headers and change the response status to “202 Accepted.”
+
+### Managing exceptions at the endpoint level
+
+It’s essential to consider what happens if the controller’s action throws an exception. In many cases, we use exceptions to signal specific situations, some of these related to the business logic.
+
+Suppose you create an endpoint the client calls to make a payment. If the user doesn’t have enough money in their account, the app might represent this situation by throwing an exception. In this case, you’ll probably want to set some details on the HTTP response to inform the client of the specific situation that occurred.
+
+- One of the ways you can manage exceptions is catching them in the controller’s action and using the ResponseEntity class, to send a different configuration of the response when the exception occurs.
+- An alternative approach is by using a REST controller advice class: an aspect that intercepts an endpoint call when it throws an exception, and you can specify a custom logic to be executed for that specific exception.
+
+---
+
+For our scenario, we define an exception named NotEnoughMoneyException, and the app will throw this exception when it cannot fulfill the payment because the client doesn’t have enough money in their account. The next code snippet shows the class defining the exception:
+
+```java
+public class NotEnoughMoneyException extends RuntimeException{
+}
+```
+
+We also implement a service class that defines the use case. For our test, we directly throw this exception. In a real-world scenario, the service would implement the complex logic for making the payment. The next code snippet shows the service class we use for our test:
+
+```java
+@Service
+public class PaymentService {
+public PaymentDetails processPayment() {
+throw new NotEnoughMoneyException();
+}
+}
+```
+
+```java
+public class PaymentDetails {
+    private double amount;
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+}
+```
+
+When the app encounters an exception, it uses another model class named ErrorDetails to inform the client of the situation.
+
+```java
+public class ErrorDetails {
+    private String message;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+}
+```
+
+How could the controller decide what object to send back depending on how the flow executed? When there’s no exception (the app successfully completes the payment), we want to return an HTTP response with the status “Accepted” of type PaymentDetails. Suppose the app encountered an exception during the execution flow. In that case, the controller’s action returns an HTTP response with the status “400 Bad Request” and an ErrorDetails instance containing a message that describes the issue.
+
+The next listing shows this logic implemented by the controller’s method:
+
+```java
+@RestController
+public class PaymentController {
+    private final PaymentService paymentService;
+
+    @Autowired
+    public PaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+
+    @PostMapping("/payment")
+    public ResponseEntity<?> makePayment() {
+        try {
+            PaymentDetails paymentDetails = paymentService.processPayment();
+
+            // If calling the service method succeeds,
+            // we return an HTTP response with status
+            // Accepted and the PaymentDetails
+            // instance as a response body.
+            return ResponseEntity
+                    .status(HttpStatus.ACCEPTED)
+                    .body(paymentDetails);
+        } catch (NotEnoughMoneyException e) {
+            ErrorDetails errorDetails = new ErrorDetails();
+            errorDetails.setMessage(e.getMessage());
+
+            // If an exception of type NotEnoughMoneyException is
+            // thrown, we return an HTTP response with status Bad
+            // Request and an ErrorDetails instance as a body.
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(errorDetails);
+        }
+    }
+}
+```
+
+This approach is good, and you’ll often find developers using it to manage the excep- tion cases. However, in a more complex application, you would find it more comfortable to separate the responsibility of exception management. First, sometimes the same exception has to be managed for multiple endpoints, and, as you guessed, we don’t want to introduce duplicated code. Second, it’s more comfortable to know you find the exception logic all in one place when you need to understand how a specific case works. For these reasons, I prefer using a REST controller advice, an aspect that intercepts exceptions thrown by controllers’ actions and applies custom logic you define according to the intercepted exception.
