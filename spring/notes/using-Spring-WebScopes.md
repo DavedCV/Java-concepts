@@ -443,3 +443,154 @@ public class LoginController {
 }
 
 ```
+
+## Using the application scope in a Spring web app
+
+In this section, we discuss the application scope. I want to mention its existence, make you aware of how it works, and emphasize that it’s better not to use it in a production app. All client requests share an application-scoped bean.
+
+The application scope is close to how a singleton works. The difference is that you can’t have more instances of the same type in the context and that we always use the HTTP requests as a reference point when discussing the life cycle of web scopes (including the application scope).
+
+We face the same concurrency problems we discussed in chapter 5 for the singleton beans for application-scoped beans: it’s better to have immutable attributes for the singleton beans. The same advice is applicable to an application-scoped bean. But if you make the attributes immutable, then you can directly use a singleton bean instead.
+
+Generally, I recommend developers avoid using application-scoped beans. It’s better to directly use a persistence layer, such as a database.
+
+Let’s change the application we worked on in this chapter and add a feature that counts the login attempts.
+
+Because we have to count the login attempts from all users, we’ll store the count in an application-scoped bean. Let’s create a LoginCountService application-scoped bean that stores the count in an attribute. The following listing shows the definition of this class.
+
+```java
+@Service
+// The @ApplicationScope
+// annotation changes the scope of
+// this bean to the application scope.
+@ApplicationScope
+public class LoginCountService {
+    private int count;
+
+    public void increment() {
+        count++;
+    }
+
+    public int getCount() {
+        return count;
+    }
+}
+```
+
+The LoginProcessor can then auto-wire this bean and call the increment() method for any new login attempt, as presented in the following listing.
+
+```java
+@Component
+// We use the @RequestScope annotation to change the
+// bean’s scope to request scope. This way, Spring creates
+// a new instance of the class for every HTTP request.
+@RequestScope
+public class LoginProcessor {
+
+    private final LoggedUserManagementService loggedUserManagementService;
+    private final LoginCountService loginCountService;
+    private String username;
+    private String password;
+
+    // We auto-wire the LoggedUserManagementService bean
+    @Autowired
+    public LoginProcessor(LoggedUserManagementService loggedUserManagementService, LoginCountService loginCountService) {
+        this.loggedUserManagementService = loggedUserManagementService;
+        this.loginCountService = loginCountService;
+    }
+
+    // The bean defines a method for
+    // implementing the login logic.
+    public boolean login() {
+        loginCountService.increment();
+
+        boolean loginResult = false;
+
+        if ("natalie".equals(username) && "password".equals(password)) {
+            loginResult = true;
+
+            // We store the username on the LoggedUserManagementService bean.
+            loggedUserManagementService.setUsername(username);
+        }
+
+        return loginResult;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+```
+
+The last thing you need to do is to display this value.
+
+```java
+@Controller
+public class MainController {
+    private final LoggedUserManagementService loggedUserManagementService;
+    private final LoginCountService loginCountService;
+
+    @Autowired
+    public MainController(LoggedUserManagementService loggedUserManagementService,
+                          LoginCountService loginCountService) {
+        this.loggedUserManagementService = loggedUserManagementService;
+        this.loginCountService = loginCountService;
+    }
+
+    @GetMapping("/main")
+    public String home(
+            @RequestParam(required = false) String logout,
+            Model model
+    )
+    {
+        // If the logout parameter is present, we erase the
+        // username from the LoggedUserManagementService bean.
+        if (logout != null) {
+            loggedUserManagementService.setUsername(null);
+        }
+
+        // We take the username value, which should be different than null if someone logged in.
+        String username = loggedUserManagementService.getUsername();
+        // Gets the count from the application-scoped bean
+        int count = loginCountService.getCount();
+
+        // If the user is not logged in, we redirect the user to the login page.
+        if (username == null) return "redirect:/";
+
+        // Add variable to the template
+        model.addAttribute("username", username);
+        // Sends the count value to the view
+        model.addAttribute("loginCount", count);
+
+        // If the user is logged in, we return the view for the main page.
+        return "main.html";
+    }
+}
+```
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome</title>
+</head>
+<body>
+    <h1>Welcome, <span th:text="${username}"></span></h1>
+    <h2>Your login number is <span th:text="${loginCount}"></span></h2>
+    <a href="/main?logout">Log Out!</a>
+</body>
+</html>
+```

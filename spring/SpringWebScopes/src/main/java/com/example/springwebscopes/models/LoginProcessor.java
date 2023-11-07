@@ -1,6 +1,7 @@
 package com.example.springwebscopes.models;
 
 import com.example.springwebscopes.services.LoggedUserManagementService;
+import com.example.springwebscopes.services.LoginCountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
@@ -13,18 +14,21 @@ import org.springframework.web.context.annotation.RequestScope;
 public class LoginProcessor {
 
     private final LoggedUserManagementService loggedUserManagementService;
+    private final LoginCountService loginCountService;
     private String username;
     private String password;
 
     // We auto-wire the LoggedUserManagementService bean
     @Autowired
-    public LoginProcessor(LoggedUserManagementService loggedUserManagementService) {
+    public LoginProcessor(LoggedUserManagementService loggedUserManagementService, LoginCountService loginCountService) {
         this.loggedUserManagementService = loggedUserManagementService;
+        this.loginCountService = loginCountService;
     }
 
     // The bean defines a method for
     // implementing the login logic.
     public boolean login() {
+        loginCountService.increment();
 
         boolean loginResult = false;
 
