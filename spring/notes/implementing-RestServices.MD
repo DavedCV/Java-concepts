@@ -381,3 +381,52 @@ public class PaymentController {
 ```
 
 This approach is good, and you’ll often find developers using it to manage the excep- tion cases. However, in a more complex application, you would find it more comfortable to separate the responsibility of exception management. First, sometimes the same exception has to be managed for multiple endpoints, and, as you guessed, we don’t want to introduce duplicated code. Second, it’s more comfortable to know you find the exception logic all in one place when you need to understand how a specific case works. For these reasons, I prefer using a REST controller advice, an aspect that intercepts exceptions thrown by controllers’ actions and applies custom logic you define according to the intercepted exception.
+
+The controller action is much simplified because it no longer treats the exception case, as presented in the following listing.
+
+```java
+@RestController
+public class PaymentController {
+    private final PaymentService paymentService;
+
+    @Autowired
+    public PaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+
+    @PostMapping("/payment")
+    public ResponseEntity<?> makePayment() {
+        PaymentDetails paymentDetails = paymentService.processPayment();
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(paymentDetails);
+    }
+}
+```
+
+Instead, we created a separate class named ExceptionControllerAdvice that implements what happens if the controller’s action throws a NotEnoughMoneyException. The ExceptionControllerAdvice class is a REST controller advice. To mark it as a REST controller advice, we use the @RestControllerAdvice annotation. The method the class defines is also called an exception handler. You specify what exceptions trigger a controller advice method using the @ExceptionHandler annotation over the method. The following listing shows the REST controller advice class’s definition and the excep- tion handler method that implements the logic associated with the NotEnoughMoneyException exception.
+
+In production apps, you sometimes need to send information about the exception that occurred, from the controller’s action to the advice. In this case, you can add a parameter to the advice’s exception handler method of the type of the handled exception. Spring is smart enough to pass the exception reference from the controller to the advice’s exception handler method. You can then use any details of the exception instance in the advice’s logic.
+
+```java
+// We use the @RestControllerAdvice
+// annotation to mark the class as a
+// REST controller advice.
+@RestControllerAdvice
+public class ExceptionControllerAdvice {
+
+    // We use the @ExceptionHandler method to associate
+    // an exception with the logic the method implements.
+    @ExceptionHandler(NotEnoughMoneyException.class)
+    public ResponseEntity<ErrorDetails> exceptionNotEnoughMoneyHandler(NotEnoughMoneyException e) {
+        ErrorDetails errorDetails = new ErrorDetails();
+        errorDetails.setMessage(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorDetails);
+    }
+}
+```
+
+## Using a request body to get data from the client
