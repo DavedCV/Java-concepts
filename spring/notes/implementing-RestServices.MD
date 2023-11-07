@@ -99,3 +99,136 @@ The HTTP response is how the backend app sends data back to the client due to a 
 - **Response headers:** Short pieces of data in the response (usually not more than a few words long)
 - **The response body:** A larger amount of data the backend needs to send in the response
 - **The response status:** A short representation of the request’s result
+
+### Sending objects as a response body
+
+The only thing you need to do to send an object to the client in a response is make the controller’s action return that object.
+
+we define a model object named Country with the attributes name (representing the country name) and population (representing the number of millions of people located in that country). We implement a controller action to return an instance of type Country.
+
+When we use an object (such as Country) to model the data transferred between two apps, we name this object a data transfer object (DTO). We can say that Country is our DTO, whose instances are returned by the REST endpoint we implement in the HTTP response body.
+
+```java
+public class Country {
+
+    private String name;
+    private int population;
+
+    // To make a Country instance simpler, we define a
+    // static factory method that receives the name and
+    // the population. This method returns a Country
+    // instance with the provided values set.
+    public static Country of(
+            String name,
+            int population
+    )
+    {
+        Country country = new Country();
+        country.setName(name);
+        country.setPopulation(population);
+        return country;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getPopulation() {
+        return population;
+    }
+
+    public void setPopulation(int population) {
+        this.population = population;
+    }
+}
+```
+
+The following listing shows the implementation of a controller’s action that returns an instance of type Country.
+
+```java
+// Marking the class as a REST controller to add a bean
+// in the Spring context and also inform the dispatcher
+// servlet not to look for a view when this method returns
+@RestController
+public class CountryController {
+
+    @GetMapping("/mapping")
+    public Country france(){
+        Country c = Country.of("france", 67);
+
+        // Returning an instance of type Country
+        return c;
+    }
+}
+```
+
+What happens when you call this endpoint? How would the object look in the HTTP response body? By default, Spring creates a string representation of the object and formats it as JSON. JavaScript Object Notation (JSON) is a simple way to format strings as attribute-value pairs.
+
+When calling the /france endpoint, the response body looks as presented in the next snippet:
+
+```json
+{
+    "name": "france",
+    "population": 67
+}
+```
+
+You could also send object collection instances in the response body. The next listing shows that we added a method that returns a List of Country objects.
+
+```java
+// Marking the class as a REST controller to add a bean
+// in the Spring context and also inform the dispatcher
+// servlet not to look for a view when this method returns
+@RestController
+public class CountryController {
+
+    @GetMapping("/france")
+    public Country france() {
+        Country c = Country.of("france", 67);
+
+        // Returning an instance of type Country
+        return c;
+    }
+
+    @GetMapping("/all")
+    public List<Country> all() {
+        Country c1 = Country.of("France", 67);
+        Country c2 = Country.of("Spain", 47);
+
+        // Returns a collection in the HTTP response body
+        return List.of(c1, c2);
+    }
+}
+```
+
+When you call this endpoint, the response body looks as presented in the next snippet:
+
+```json
+[
+    {
+        "name": "France",
+        "population": 67
+    },
+    {
+        "name": "Spain",
+        "population": 47
+    }
+]
+```
+
+**Using JSON is the most common way to represent objects when working with REST endpoints.**
+
+### Setting the response status and headers
+
+In this section, we discuss setting the response status and response headers. Sometimes it’s more comfortable to send part of the data in the response headers. The response status is also an essential flag in the HTTP response you use to signal the request’s result. By default, Spring sets some common HTTP statuses:
+
+- 200 OK if no exception was thrown on the server side while processing the request.
+- 404 Not Found if the requested resource doesn’t exist.
+- 400 Bad Request if a part of the request could not be matched with the way the server expected the data.
+- 500 Error on server if an exception was thrown on the server side for any reason while processing the request. Usually, for this kind of exception, the client can’t do anything, and it’s expected someone should solve the problem on the backend.
+
+However, in some cases, the requirements ask you to configure a custom status. How could you do that? The easiest and most common way to customize the HTTP response is using the **ResponseEntity** class. This class provided by Spring allows you to specify the response body, status, and headers on the HTTP response.
