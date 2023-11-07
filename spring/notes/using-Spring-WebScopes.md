@@ -200,3 +200,246 @@ public class LoginController {
 ```
 
 ## Using the session scope in a Spring web app
+
+When you enter a web app and log in, you expect to then surf through that app’s pages, and the app still remembers you’ve logged in.
+
+A **session-scoped** bean is an object managed by Spring, for which Spring creates an instance and links it to the HTTP session. Once a client sends a request to the server, the server reserves a place in the memory for this request, for the whole duration of their session.
+
+Spring creates an instance of a session-scoped bean when the HTTP session is created for a specific client. That instance can be reused for the same client while it still has the HTTP session active. The data you store in the session-scoped bean attribute is available for all the client’s requests throughout an HTTP session. This approach of storing the data allows you to store information about what users do while they’re surfing through the pages of your app.
+
+![](/images/sessionScopedBeans.png)
+
+A session-scoped bean allows us to store data shared by multiple requests of the same client.
+
+![](/images/keyAspectsSessionScopedBans.png)
+
+We continue to use a session-scoped bean to make our app aware that a user logged in and recognize them as a logged-in user while they access different pages of the app.
+
+Let’s change the application we implemented to display a page that only logged-in users can access. Once a user logs in, the app redirects them to this page, which displays a welcome message containing the logged-in username and offers the user the option to log out by clicking a link.
+
+These are the steps we need to take to implement this change:
+1. Create a session-scoped bean to keep the logged-in user’s details.
+2. Create the page a user can only access after login.
+3. Make sure a user cannot access the page created at point 1 without logging in first.
+4. Redirect the user from login to the main page after successful authentication.
+
+Fortunately, creating a session-scoped bean in Spring is as simple as using the @SessionScope annotation with the bean class. Let’s create a new class, LoggedUserManagementService, and make it session-scoped, as presented in the following listing.
+
+```java
+@Service
+// We use the @SessionScope
+// annotation to change the
+// scope of the bean to session.
+@SessionScope
+public class LoggedUserManagementService {
+    private String username;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+}
+```
+
+Every time a user successfully logs in, we store its name in this bean’s username attribute. We auto-wire the LoggedUserManagementService bean in the LoginProcessor class, which we implemented to take care of the authentication logic, as shown in the following listing.
+
+```java
+@Component
+// We use the @RequestScope annotation to change the
+// bean’s scope to request scope. This way, Spring creates
+// a new instance of the class for every HTTP request.
+@RequestScope
+public class LoginProcessor {
+
+    private final LoggedUserManagementService loggedUserManagementService;
+    private String username;
+    private String password;
+
+    @Autowired
+    public LoginProcessor(LoggedUserManagementService loggedUserManagementService) {
+        this.loggedUserManagementService = loggedUserManagementService;
+    }
+
+    // The bean defines a method for
+    // implementing the login logic.
+    public boolean login() {
+
+        boolean loginResult = false;
+
+        if ("natalie".equals(username) && "password".equals(password)) {
+            loginResult = true;
+
+            // We store the username on the LoggedUserManagementService bean.
+            loggedUserManagementService.setUsername(username);
+        }
+
+        return loginResult;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+```
+
+Observe that the LoginProcessor bean stays request-scoped. We still use Spring to create this instance for each login request. We only need the username and password attributes’ values during the request to execute the authentication logic.
+
+Because the LoggedUserManagementService bean is session-scoped, the username value will now be accessible throughout the entire HTTP session. You can use this value to know if someone is logged in, and who. You don’t have to worry about the case where multiple users are logged in; the application framework makes sure to link each HTTP request to the correct session.
+
+Now we create a new page and make sure a user can access it only if they have already logged in. We define a new controller (that we’ll call MainController) for the new page. We’ll define an action and map it to the /main path. To make sure a user can access this path only if they logged in, we check if the LoggedUserManagementService bean stores any username. If it doesn’t, we redirect the user to the login page. To redirect the user to another page, the controller action needs to return the string “redirect:” followed by the path to which the action wants to redirect the user.
+
+```java
+@Controller
+public class MainController {
+    private final LoggedUserManagementService loggedUserManagementService;
+
+    @Autowired
+    public MainController(LoggedUserManagementService loggedUserManagementService) {
+        this.loggedUserManagementService = loggedUserManagementService;
+    }
+
+    @GetMapping("/main")
+    public String home() {
+        // We take the username value, which should be different than null if someone logged in.
+        String username = loggedUserManagementService.getUsername();
+
+        // If the user is not logged in, we redirect the user to the login page.
+        if (username == null) return "redirect:/";
+
+        // If the user is logged in, we return the view for the main page.
+        return "main.html";
+    }
+}
+```
+
+You need to add the main.html that defines the view in the “resources/templates” folder of your Spring Boot project.
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome</title>
+</head>
+<body>
+    <h1>Welcome!</h1>
+</body>
+</html>
+```
+
+
+To allow the user to log out is also easy. You just need to set the username in the LoggedUserManagementService session bean as null. Let’s create a logout link on the page and also add the logged-in username in the welcome message. The following list- ing shows the changes to the main.html page that defines our view.
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome</title>
+</head>
+<body>
+    <h1>Welcome, <span th:text="${username}"></span></h1>
+    <a href="/main?logout">Log Out!</a>
+</body>
+</html>
+```
+
+```java
+public class MainController {
+    private final LoggedUserManagementService loggedUserManagementService;
+
+    @Autowired
+    public MainController(LoggedUserManagementService loggedUserManagementService) {
+        this.loggedUserManagementService = loggedUserManagementService;
+    }
+
+    @GetMapping("/main")
+    public String home(
+            @RequestParam(required = false) String logout,
+            Model model
+    )
+    {
+        // If the logout parameter is present, we erase the
+        // username from the LoggedUserManagementService bean.
+        if (logout != null) {
+            loggedUserManagementService.setUsername(null);
+        }
+
+        // We take the username value, which should be different than null if someone logged in.
+        String username = loggedUserManagementService.getUsername();
+
+        // If the user is not logged in, we redirect the user to the login page.
+        if (username == null) return "redirect:/";
+
+        // Add variable to the template
+        model.addAttribute("username", username);
+
+        // If the user is logged in, we return the view for the main page.
+        return "main.html";
+    }
+}
+```
+
+To complete the app, we’d like to change the LoginController to redirect users to the main page once they authenticate. To achieve this result, we need to change the LoginController’s action, as presented in the following listing.
+
+```java
+// We use the @Controller stereotype annotation
+// to define the class as a Spring MVC controller.
+@Controller
+public class LoginController {
+
+    private final LoginProcessor loginProcessor;
+
+    @Autowired
+    public LoginController(LoginProcessor loginProcessor) {
+        this.loginProcessor = loginProcessor;
+    }
+
+    // We map the controller’s action to the
+    // root ("/ ") path of the application.
+    @GetMapping("/")
+    public String loginGet() {
+
+        // We return the view name we
+        // want to be rendered by the app.
+        return "login.html";
+    }
+
+    // We are mapping the controller’s action to
+    // the HTTP POST request of the login page
+    @PostMapping("/")
+    public String loginPost(
+            @RequestParam String username,
+            @RequestParam String password,
+            Model model
+    )
+    {
+        loginProcessor.setUsername(username);
+        loginProcessor.setPassword(password);
+        boolean loggedIn = loginProcessor.login();
+
+        // When the user successfully authenticates,
+        // the app redirects them to the main page.
+        if (loggedIn) return "redirect:/main";
+
+        model.addAttribute("message", "Login Failed!");
+        return "login.html";
+    }
+}
+
+```

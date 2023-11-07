@@ -43,9 +43,11 @@ public class LoginController {
         loginProcessor.setPassword(password);
         boolean loggedIn = loginProcessor.login();
 
-        if (loggedIn) model.addAttribute("message", "You are now logged in");
-        else model.addAttribute("message", "Login Failed!");
+        // When the user successfully authenticates,
+        // the app redirects them to the main page.
+        if (loggedIn) return "redirect:/main";
 
+        model.addAttribute("message", "Login Failed!");
         return "login.html";
     }
 }

@@ -1,5 +1,7 @@
 package com.example.springwebscopes.models;
 
+import com.example.springwebscopes.services.LoggedUserManagementService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
@@ -9,13 +11,31 @@ import org.springframework.web.context.annotation.RequestScope;
 // a new instance of the class for every HTTP request.
 @RequestScope
 public class LoginProcessor {
+
+    private final LoggedUserManagementService loggedUserManagementService;
     private String username;
     private String password;
+
+    // We auto-wire the LoggedUserManagementService bean
+    @Autowired
+    public LoginProcessor(LoggedUserManagementService loggedUserManagementService) {
+        this.loggedUserManagementService = loggedUserManagementService;
+    }
 
     // The bean defines a method for
     // implementing the login logic.
     public boolean login() {
-        return "natalie".equals(username) && "password".equals(password);
+
+        boolean loginResult = false;
+
+        if ("natalie".equals(username) && "password".equals(password)) {
+            loginResult = true;
+
+            // We store the username on the LoggedUserManagementService bean.
+            loggedUserManagementService.setUsername(username);
+        }
+
+        return loginResult;
     }
 
     public String getUsername() {
