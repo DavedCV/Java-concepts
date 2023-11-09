@@ -133,3 +133,85 @@ public class PaymentController {
 Now start both projects (the payments service and this section’s app) and call the app’s /payment endpoint using cURL or Postman.
 
 ## Calling REST endpoints using RestTemplate
+
+We again implement the app that calls the /payment endpoint of the payment service, but this time we use a different approach: RestTemplate.
+
+It is being put to sleep not because it’s not working properly or because it’s not a good tool. But as apps evolved, we started to need more capabilities. Developers wanted to be able to benefit from different things that aren’t easy to implement with RestTemplate, such as the following:
+
+- Calling the endpoints both synchronously and asynchronously
+- Writing less code and treating fewer exceptions (eliminate boilerplate code)
+- Retrying call executions and implementing fallback operations (logic performed when the app can’t execute a specific REST call for any reason)
+
+The steps for defining the call are as follows:
+
+1. Define the HTTP headers by creating and configuring an HttpHeaders
+instance.
+2. Create an HttpEntity instance that represents the request data (headers and body).
+3. Send the HTTP call using the exchange() method and get the HTTP response.
+
+```java
+@Component
+public class PaymentProxy {
+    private final RestTemplate rest;
+
+    // We take the URL to the payment
+    // service from the properties file.
+    @Value("${name.service.url}")
+    private String paymentsServiceURL;
+
+    // We inject the RestTemplate from the
+    // Spring context using constructor DI.
+    @Autowired
+    public PaymentProxy(RestTemplate rest) {
+        this.rest = rest;
+    }
+
+    public Payment createPayment(Payment payment) {
+        String uri = paymentsServiceURL + "/payment";
+
+        // We build the HttpHeaders object to
+        // define the HTTP request headers.
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("requestId", UUID.randomUUID().toString());
+
+        // We build the HttpEntity object
+        // to define the request data.
+        HttpEntity<Payment> httpEntity = new HttpEntity<>(payment, headers);
+
+        // We send the HTTP request
+        // and retrieve the data on
+        // the HTTP response.
+        ResponseEntity<Payment> response = rest.exchange(uri, HttpMethod.POST, httpEntity, Payment.class);
+
+        // We return the HTTP response body.
+        return response.getBody();
+    }
+}
+```
+
+Observe how the createPayment() method defines the header by creating an HttpHeaders instance and adding the needed header “requestId” to this instance using the add() method. It then creates a HttpEntity instance based on the headers and the body (received by the method as a parameter). The method then sends the HTTP request using RestTemplate’s exchange() method. The exchange() method’s parameters are the URI and the HTTP method, followed by the HttpEntity instance (that holds the request data) and the type expected for the response body.
+
+We define a simple endpoint to call this implementation:
+
+```java
+@RestController
+public class PaymentController {
+    private final PaymentProxy paymentsProxy;
+
+    public PaymentController(PaymentProxy paymentsProxy) {
+        this.paymentsProxy = paymentsProxy;
+    }
+
+    @PostMapping("/payment")
+    public Payment createPayment(
+            @RequestBody Payment payment
+    )
+    {
+        return paymentsProxy.createPayment(payment);
+    }
+}
+```
+
+We run both apps, the payments service and this section’s app, on different ports to validate our implementation works as expected.
+
+## Calling REST endpoints using WebClient
