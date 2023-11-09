@@ -430,3 +430,43 @@ public class ExceptionControllerAdvice {
 ```
 
 ## Using a request body to get data from the client
+
+You learned in chapter 8 that you can send data in the HTTP request using request parameters and path variables. Because REST endpoints rely on the same Spring MVC mechanism, nothing from the syntaxes you learned in chapter 8 changes regarding sending data in request parameters and path variables. You can use the same annotations and implement the REST endpoints identically as you were implementing the controller actions for your web pages.
+
+However, we didn’t discuss one essential thing: the HTTP request has a request body, and you can use it to send data from the client to the server. The HTTP request body is often used with REST endpoints.
+
+To use the request body, you just need to annotate a parameter of the controller’s action with **@RequestBody**. By default, Spring assumes you used JSON to represent the parameter you annotated and will try to decode the JSON string into an instance of your parameter type. In the case Spring cannot decode the JSON-formatted string into that type, the app sends back a response with the status “400 Bad Request.”
+
+To show this:
+
+The controller defines an action mapped to the /payment path with HTTP POST and expects to get a request body of PaymentDetails type. The controller prints the amount of the PaymentDetails object in the server’s console and sends the same object in the response body back to the client.
+
+```java
+@RestController
+public class PaymentController {
+    private final PaymentService paymentService;
+    private static Logger logger = Logger.getLogger(PaymentController.class.getName());
+
+    @Autowired
+    public PaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
+
+    @PostMapping("/payment")
+    // We get the payment details from the HTTP request body.
+    public ResponseEntity<PaymentDetails> makePayment(@RequestBody PaymentDetails paymentDetails) {
+
+        // We log the amount of the payment in the server’s console.
+        logger.info("Received payment: " + paymentDetails.getAmount());
+
+        // PaymentDetails paymentDetails = paymentService.processPayment();
+
+        // We send back the payment details object
+        // in the HTTP response body, and we set the
+        // HTTP response status to 202 ACCEPTED
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(paymentDetails);
+    }
+}
+```
