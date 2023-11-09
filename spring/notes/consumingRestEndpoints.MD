@@ -213,5 +213,3 @@ public class PaymentController {
 ```
 
 We run both apps, the payments service and this section’s app, on different ports to validate our implementation works as expected.
-
-## Calling REST endpoints using WebClient
