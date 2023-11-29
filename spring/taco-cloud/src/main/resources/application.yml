@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    # Telling Spring to not generate a unique random value for the database name.
+    generate-unique-name: false
+    name: tacocloud
