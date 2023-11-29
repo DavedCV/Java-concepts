@@ -1,10 +1,11 @@
 package sia.tacocloud.domain;
 
+import jakarta.persistence.Entity;
 import lombok.Data;
-import org.springframework.data.relational.core.mapping.Table;
+import lombok.NoArgsConstructor;
 
 @Data
-@Table
+@NoArgsConstructor(force = true)
 public class IngredientRef {
     private final String ingredient;
 }
