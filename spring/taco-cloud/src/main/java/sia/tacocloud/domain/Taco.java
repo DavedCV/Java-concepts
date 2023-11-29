@@ -3,13 +3,17 @@ package sia.tacocloud.domain;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Table
 @Data
 public class Taco {
 
+    @Id
     private Long id;
     private LocalDate createdAt;
 
