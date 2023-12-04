@@ -1,6 +1,5 @@
 package sia.tacocloud.domain;
 
-import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

@@ -14,8 +14,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-@Entity
 @Data
+@Entity(name = "user_data")
 @NoArgsConstructor(force = true)
 @RequiredArgsConstructor
 public class User implements UserDetails {
@@ -28,6 +28,7 @@ public class User implements UserDetails {
     private final String state;
     private final String zip;
     private final String phoneNumber;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
