@@ -1,5 +1,29 @@
+logging:
+  level:
+    sia.tacocloud: DEBUG
+
 spring:
   datasource:
     # Telling Spring to not generate a unique random value for the database name.
     generate-unique-name: false
     name: tacocloud
+
+taco:
+  orders:
+    pageSize: 10
+
+---
+spring:
+  profiles: prod
+
+  datasource:
+    url: jdbc:postgresql://localhost/tacocloud
+    username: david
+    password: Davedcac
+
+logging:
+  level:
+    sia.tacocloud: WARN
+
+
+
