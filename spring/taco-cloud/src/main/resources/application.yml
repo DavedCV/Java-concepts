@@ -13,8 +13,11 @@ taco:
     pageSize: 10
 
 ---
+
 spring:
-  profiles: prod
+  config:
+    activate:
+      on-profile: prod
 
   datasource:
     url: jdbc:postgresql://localhost/tacocloud
