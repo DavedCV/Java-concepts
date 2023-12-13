@@ -11,7 +11,6 @@ import java.util.List;
 @Entity
 @Data
 public class Taco {
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
