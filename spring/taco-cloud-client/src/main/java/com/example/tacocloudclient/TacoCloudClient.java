@@ -2,10 +2,11 @@ package com.example.tacocloudclient;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -21,7 +22,12 @@ public class TacoCloudClient {
 
     // get example -----------------------------------------------------------------------------------------------------
     public Ingredient getIngredientById(String ingredientId) {
-        return rest.getForObject("http://localhost:8080/api/ingredients/{id}", Ingredient.class, ingredientId);
+        try {
+            return rest.getForObject("http://localhost:8080/api/ingredients/{id}", Ingredient.class, ingredientId);
+        } catch (HttpClientErrorException.NotFound notFoundException) {
+            // Handle 404 Not Found response
+            return null; // or throw a custom exception
+        }
     }
 
     public Ingredient getIngredientById2(String ingredientId) {
@@ -34,11 +40,9 @@ public class TacoCloudClient {
 
     // put example -----------------------------------------------------------------------------------------------------
 
-    /*
     public void updateIngredient(Ingredient ingredient) {
         rest.put("http://localhost:8080/api/ingredients/{id}", ingredient, ingredient.getId());
     }
-    */
 
     // post example ----------------------------------------------------------------------------------------------------
 

@@ -12,7 +12,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(path = "/api/ingredients", produces = "application/json")
-@CrossOrigin(origins = "http://localhost:5000")
 public class IngredientController {
     private final TacoRepository tacoRepository;
     private IngredientRepository ingredientRepository;
@@ -40,7 +39,7 @@ public class IngredientController {
         return new ResponseEntity<>(ingredient, HttpStatus.OK);
     }
 
-    @PostMapping("/{id}")
+    @PostMapping
     public ResponseEntity<Ingredient> postIngredient(@RequestBody Ingredient ingredient) {
         ingredientRepository.save(ingredient);
         return new ResponseEntity<>(ingredient, HttpStatus.CREATED);

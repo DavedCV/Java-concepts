@@ -29,7 +29,6 @@ public class TacoCloudClientApplication {
         };
     }
 
-    /*
     @Bean
     public CommandLineRunner putAnIngredient(TacoCloudClient tacoCloudClient) {
         return args -> {
@@ -41,7 +40,6 @@ public class TacoCloudClientApplication {
             log.info("AFTER:  " + after);
         };
     }
-    */
 
     @Bean
     public CommandLineRunner addAnIngredient(TacoCloudClient tacoCloudClient) {
