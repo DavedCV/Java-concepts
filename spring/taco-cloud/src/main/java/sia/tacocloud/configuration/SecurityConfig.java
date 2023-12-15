@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         (authorizeHttpRequests) -> authorizeHttpRequests
                                 .requestMatchers("/design", "/orders").hasRole("USER")
-                                .requestMatchers("/", "/**").permitAll()
+                                .requestMatchers("/", "/**"").permitAll()
                 )
                 .formLogin(formLogin -> formLogin.loginPage("/login").defaultSuccessUrl("/design"))
                 .logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/"))
