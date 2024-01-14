@@ -24,6 +24,11 @@ public class IngredientController {
         this.tacoRepository = tacoRepository;
     }
 
+    @GetMapping
+    public Iterable<Ingredient> allIngredients() {
+        return ingredientRepository.findAll();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Ingredient> getIngredientById(@PathVariable String id) {
         Optional<Ingredient> optionalIngredient = ingredientRepository.findById(id);
@@ -47,7 +52,7 @@ public class IngredientController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteIngredientById(@PathVariable String id) {
+    public void deleteIngredientById(@PathVariable("id") String id) {
         ingredientRepository.deleteById(id);
     }
 
