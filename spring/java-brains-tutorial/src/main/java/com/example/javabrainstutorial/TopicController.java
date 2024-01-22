@@ -1,8 +1,7 @@
 package com.example.javabrainstutorial;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,16 +17,27 @@ public class TopicController {
 
     @GetMapping("/topics")
     public List<Topic> getAllTopics() {
-        return List.of(
-                new Topic("spring", "Spring Framework", "Spring Framework Description"),
-                new Topic("java", "Core Java", "Core Java Description"),
-                new Topic("javascript", "JavaScript", "Javascript Description")
-        );
+        return topicService.getAllTopics();
     }
 
+    @GetMapping("/topics/{id}")
+    public Topic getTopic(@PathVariable String id) {
+        return topicService.getTopic(id);
+    }
 
-    public Topic getTopic() {
+    @PostMapping("/topics")
+    public void addTopic(@RequestBody Topic topic) {
+        topicService.addTopic(topic);
+    }
 
+    @PutMapping("/topics/{id}")
+    public Topic updateTopic(@RequestBody Topic topic, @PathVariable String id) {
+        return topicService.updateTopic(id, topic);
+    }
+
+    @DeleteMapping("/topics/{id}")
+    public void deleteTopic(@PathVariable String id) {
+        topicService.deleteTopic(id);
     }
 
 }
