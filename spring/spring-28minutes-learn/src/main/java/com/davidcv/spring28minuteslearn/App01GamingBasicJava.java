@@ -1,10 +1,10 @@
 package com.davidcv.spring28minuteslearn;
 
-import com.davidcv.spring28minuteslearn.game.GameRunner;
-import com.davidcv.spring28minuteslearn.game.MarioGame;
-import com.davidcv.spring28minuteslearn.game.SuperContraGame;
+import game.GameRunner;
+import game.MarioGame;
+import game.SuperContraGame;
 
-public class AppGamingBasicJava {
+public class App01GamingBasicJava {
     public static void main(String[] args) {
         MarioGame marioGame = new MarioGame();
         SuperContraGame superContraGame = new SuperContraGame();

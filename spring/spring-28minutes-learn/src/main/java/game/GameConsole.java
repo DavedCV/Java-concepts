@@ -1,4 +1,4 @@
-package com.davidcv.spring28minuteslearn.game;
+package game;
 
 public interface GameConsole {
     void up();

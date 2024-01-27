@@ -1,4 +1,4 @@
-package com.davidcv.spring28minuteslearn.game;
+package game;
 
 public class SuperContraGame implements GameConsole{
     public void up() {
