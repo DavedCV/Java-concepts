@@ -1,7 +1,6 @@
 package com.davidcv.learnjpaandhibernate.course.jdbc;
 
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,6 +14,16 @@ public class CourseJdbcCommandLineRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        courseJdbcRepository.insert();
+
+        // Test the insertion operation
+        courseJdbcRepository.insert(new Course(1, "Learn AWS", "in28minutes"));
+        courseJdbcRepository.insert(new Course(2, "Learn React", "in28minutes"));
+        courseJdbcRepository.insert(new Course(3, "Learn Java", "in28minutes"));
+
+        // Test the delete operation
+        courseJdbcRepository.delete(1);
+
+        // Test the select operation
+        System.out.println(courseJdbcRepository.select(2));
     }
 }
