@@ -1,4 +1,4 @@
-package com.davidcv.spring28minuteslearn;
+package helloWorld;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -48,7 +48,8 @@ public class HelloWorldConfiguration {
             String name,
             int age,
             @Qualifier("address2qualifier") Address address
-    ) {
+    )
+    {
         return new PersonWAddress(name, age, address);
     }
 

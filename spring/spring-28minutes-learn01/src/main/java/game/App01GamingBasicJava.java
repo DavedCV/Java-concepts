@@ -1,4 +1,4 @@
-package com.davidcv.spring28minuteslearn;
+package game;
 
 import game.GameRunner;
 import game.MarioGame;

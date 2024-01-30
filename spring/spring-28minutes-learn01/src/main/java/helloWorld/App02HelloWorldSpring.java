@@ -1,4 +1,4 @@
-package com.davidcv.spring28minuteslearn;
+package helloWorld;
 
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
