@@ -1,5 +1,6 @@
 package com.davidcv.learnjpaandhibernate.course.jdbc;
 
+import com.davidcv.learnjpaandhibernate.course.Course;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -27,11 +28,11 @@ public class CourseJdbcRepository {
         jdbcTemplate.update(testInsertQuery, course.getId(), course.getName(), course.getAuthor());
     }
 
-    public void delete(long id) {
+    public void deleteById(long id) {
         jdbcTemplate.update(testDeleteQuery, id);
     }
 
-    public Course select(long id) {
+    public Course findById(long id) {
 
         // ResultSet -> Bean
         return jdbcTemplate.queryForObject(testSelectQuery, new BeanPropertyRowMapper<>(Course.class), id);
