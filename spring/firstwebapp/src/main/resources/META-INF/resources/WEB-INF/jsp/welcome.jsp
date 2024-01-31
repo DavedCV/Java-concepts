@@ -3,8 +3,8 @@
         <title>Welcome</title>
     </head>
     <body>
-        <h1>Welcome</h1>
-        <p>Your name: ${name}</p>
-        <p>Your password: ${password}</p>
+        <h1>Welcome ${name}</h1>
+        <hr>
+        <p><a href="listTodos">Manage</a> your todos</p>
     </body>
 </html>
