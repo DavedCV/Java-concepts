@@ -1,5 +1,5 @@
 INSERT INTO todo (ID, USERNAME, DESCRIPTION, TARGET_DATE, DONE)
-VALUES (10001, 'david', 'Learn AWS Ceritified', CURRENT_DATE(), false);
+VALUES (10001, 'david', 'Learn AWS Certified', CURRENT_DATE(), false);
 
 INSERT INTO todo (ID, USERNAME, DESCRIPTION, TARGET_DATE, DONE)
 VALUES (10002, 'david', 'Learn Java', CURRENT_DATE(), false);
