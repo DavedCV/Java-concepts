@@ -57,4 +57,11 @@ public class UserResource {
          * */
         return ResponseEntity.created(location).build();
     }
+
+    // DELETE /users/{id}
+    @DeleteMapping("/users/{id}")
+    public void deleteUser(@PathVariable long id) {
+        userDaoService.deleteUserById(id);
+    }
+
 }
