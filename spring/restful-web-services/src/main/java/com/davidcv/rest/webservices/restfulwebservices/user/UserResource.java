@@ -1,6 +1,8 @@
 package com.davidcv.rest.webservices.restfulwebservices.user;
 
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -24,13 +26,21 @@ public class UserResource {
     }
 
     // GET /users/{id}
+    // - add link to: http://localhost:8080/users
+    // - EntityModel: wraps the domain object and add link to it
+    // - WebMvcLinkBuilder: builder to ease build of Link instances pointing to Spring MVC controllers
     @GetMapping("/users/{id}")
-    public User getUser(@PathVariable long id) {
+    public EntityModel<User> getUser(@PathVariable long id) {
         User userById = userDaoService.findUserById(id);
 
         if (userById == null) throw new UserNotFoundException("id: " + id);
 
-        return userById;
+        EntityModel<User> entityModel = EntityModel.of(userById);
+        WebMvcLinkBuilder linkBuilder =
+                WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).retrieveAllUsers());
+        entityModel.add(linkBuilder.withRel("allUsers"));
+
+        return entityModel;
     }
 
     // POST /users
