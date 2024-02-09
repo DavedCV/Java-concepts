@@ -10,12 +10,9 @@ export default function Login() {
   const authContext = useAuth();
 
   function handleSubmit() {
-    if (username === "test" && password === "test") {
+    if (authContext.login(username, password)) {
       setShowSucessMessage(true);
       navigate("/welcome");
-      authContext.setIsAuth(true);
-    } else {
-      authContext.setIsAuth(false);
     }
   }
 

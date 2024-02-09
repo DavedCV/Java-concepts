@@ -5,6 +5,10 @@ export default function Header() {
   const authContext = useAuth();
   const isAuth = authContext.isAuth;
 
+  function logout() {
+    authContext.logout();
+  }
+
   return (
     <header className="border-bottom border-light border-5 mb-5 p-2">
       <div className="container">
@@ -39,7 +43,7 @@ export default function Header() {
                 </li>
               ) : (
                 <li className="nav-item">
-                  <Link className="nav-link" to="/logout">
+                  <Link className="nav-link" to="/logout" onClick={logout}>
                     Logout
                   </Link>
                 </li>
